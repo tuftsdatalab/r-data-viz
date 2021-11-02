@@ -3,7 +3,7 @@ channels:
  - conda-forge
 dependencies:
  - r-base=4.1.1
- - r-pacman=0.5.1
+ - r-librarian=1.8.1
  - r-tidyverse=1.3.1
  - r-janitor=2.1.0
  - r-countrycode=1.3.0

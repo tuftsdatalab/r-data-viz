@@ -4,11 +4,11 @@ output: html_notebook
 ---
 
 ```{r include=FALSE}
-install.packages('pacman')
+install.packages('librarian')
 ```
 
 ```{r include=FALSE}
-pacman::p_load(tidyverse, janitor, countrycode, plotly)
+librarian::shelf(tidyverse, janitor, countrycode, plotly)
 ```
 
 ```{r message=FALSE}
@@ -62,6 +62,7 @@ gdp
 lexp <- read_world_bank_data('data/life_expectancy.csv', 'life_expectancy')
 lexp
 ```
+
 ```{r}
 merged <- dplyr::inner_join(pop, gdp, by = c('country_code', 'year'))
 merged
@@ -80,15 +81,15 @@ merged <- lexp %>% dplyr::select(-'country_name') %>%
 merged
 ```
 
-```{r}
+```{r message=FALSE}
 regions <- readr::read_csv('data/regions.csv') %>%
     janitor::clean_names()
 regions
 ```
+
 ```{r}
 help(countrycode)
 ```
-
 
 ```{r}
 countrycode(c('United States of America', 'Estonia'),
