@@ -11,9 +11,8 @@ install.packages('pacman')
 pacman::p_load(tidyverse, janitor, countrycode, plotly)
 ```
 
-```{r}
-pop <- readr::read_csv('data/population.csv', skip = 4,
-                              show_col_types = FALSE)
+```{r message=FALSE}
+pop <- readr::read_csv('data/population.csv', skip = 4)
 pop
 ```
 
@@ -34,8 +33,8 @@ pop <- tidyr::pivot_longer(data = pop, cols = starts_with('x'),
 pop
 ```
 
-```{r}
-pop <- read_csv('data/population.csv', skip = 4, show_col_types = FALSE) %>%
+```{r message=FALSE}
+pop <- read_csv('data/population.csv', skip = 4) %>%
     clean_names() %>%
     select(-'indicator_name', -'indicator_code') %>%
     pivot_longer(cols = starts_with('x'), names_to = 'year',
@@ -45,7 +44,7 @@ pop
 
 ```{r}
 read_world_bank_data <- function(file_path, variable_name) {
-    df <- readr::read_csv(file_path, skip = 4, show_col_types = FALSE) %>%
+    df <- readr::read_csv(file_path, skip = 4) %>%
         janitor::clean_names() %>%
         dplyr::select(-'indicator_name', -'indicator_code') %>%
         tidyr::pivot_longer(cols = starts_with('x'), names_to = 'year',
@@ -54,12 +53,12 @@ read_world_bank_data <- function(file_path, variable_name) {
 }
 ```
 
-```{r}
+```{r message=FALSE}
 gdp <- read_world_bank_data('data/gdp.csv', 'gdp')
 gdp
 ```
 
-```{r}
+```{r message=FALSE}
 lexp <- read_world_bank_data('data/life_expectancy.csv', 'life_expectancy')
 lexp
 ```
@@ -82,7 +81,7 @@ merged
 ```
 
 ```{r}
-regions <- readr::read_csv('data/regions.csv', show_col_types = FALSE) %>%
+regions <- readr::read_csv('data/regions.csv') %>%
     janitor::clean_names()
 regions
 ```
