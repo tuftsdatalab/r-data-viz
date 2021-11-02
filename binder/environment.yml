@@ -1,0 +1,10 @@
+name: intro-r
+channels:
+ - conda-forge
+dependencies:
+ - r-base
+ - r-pacman
+ - r-tidyverse
+ - r-janitor
+ - r-countrycode
+ - r-plotly
