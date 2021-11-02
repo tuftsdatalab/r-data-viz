@@ -1,0 +1,173 @@
+---
+title: "R for Data Manipulation and Visualization"
+output: html_notebook
+---
+
+```{r include=FALSE}
+install.packages('pacman')
+```
+
+```{r include=FALSE}
+pacman::p_load(tidyverse, janitor, countrycode, plotly)
+```
+
+```{r}
+pop <- readr::read_csv('data/population.csv', skip = 4,
+                              show_col_types = FALSE)
+pop
+```
+
+```{r}
+pop <- janitor::clean_names(pop)
+pop
+```
+
+```{r}
+pop <- dplyr::select(pop, -'indicator_name', -'indicator_code')
+pop
+```
+
+```{r}
+pop <- tidyr::pivot_longer(data = pop, cols = starts_with('x'),
+                           names_to = 'year', names_prefix = 'x',
+                           values_to = 'population')
+pop
+```
+
+```{r}
+pop <- read_csv('data/population.csv', skip = 4, show_col_types = FALSE) %>%
+    clean_names() %>%
+    select(-'indicator_name', -'indicator_code') %>%
+    pivot_longer(cols = starts_with('x'), names_to = 'year',
+                 names_prefix = 'x', values_to = 'population')
+pop
+```
+
+```{r}
+read_world_bank_data <- function(file_path, variable_name) {
+    df <- readr::read_csv(file_path, skip = 4, show_col_types = FALSE) %>%
+        janitor::clean_names() %>%
+        dplyr::select(-'indicator_name', -'indicator_code') %>%
+        tidyr::pivot_longer(cols = starts_with('x'), names_to = 'year',
+                            names_prefix = 'x', values_to = variable_name)
+    return(df)
+}
+```
+
+```{r}
+gdp <- read_world_bank_data('data/gdp.csv', 'gdp')
+gdp
+```
+
+```{r}
+lexp <- read_world_bank_data('data/life_expectancy.csv', 'life_expectancy')
+lexp
+```
+```{r}
+merged <- dplyr::inner_join(pop, gdp, by = c('country_code', 'year'))
+merged
+```
+
+```{r}
+merged <- merged %>% dplyr::select(-country_name.y) %>% 
+    dplyr::rename(country_name = country_name.x) %>%
+    dplyr::mutate(gdp_per_capita = gdp / population)
+merged
+```
+
+```{r}
+merged <- lexp %>% dplyr::select(-'country_name') %>%
+    dplyr::inner_join(merged, ., by = c('country_code', 'year'))
+merged
+```
+
+```{r}
+regions <- readr::read_csv('data/regions.csv', show_col_types = FALSE) %>%
+    janitor::clean_names()
+regions
+```
+```{r}
+help(countrycode)
+```
+
+
+```{r}
+countrycode(c('United States of America', 'Estonia'),
+            origin = 'country.name', destination = 'iso3c')
+```
+
+```{r}
+countrycode(regions$country_name,
+            origin = 'country.name', destination = 'iso3c')
+```
+
+```{r}
+regions <- regions %>% 
+    mutate(country_code = countrycode(country_name, origin = 'country.name',
+                                      destination = 'iso3c')) %>%
+    select(-country_name)
+regions
+```
+
+```{r}
+merged <- inner_join(merged, regions, by = 'country_code')
+merged
+```
+
+```{r}
+data_2019 <- merged %>% filter(year == 2019) %>% drop_na()
+data_2019
+```
+
+```{r}
+ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
+    geom_point()
+```
+
+```{r}
+ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
+    geom_point(aes(color = region_name, size = population))
+```
+
+```{r}
+ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
+    geom_point(aes(color = region_name, size = population)) + 
+    scale_size(range = c(2,10))
+```
+
+```{r}
+ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
+    geom_point(aes(color = region_name, size = population)) + 
+    scale_size(range = c(2,10)) +
+    geom_smooth(formula = y ~ log(x), method = 'lm')
+```
+
+```{r}
+plot <- ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
+    geom_point(aes(color = region_name, size = population)) + 
+    scale_size(range = c(2,10)) +
+    geom_smooth(formula = y ~ log(x), method = 'lm', se = FALSE,
+                color = 'black', linetype = 'dashed') +
+    labs(title = 'Health and Wealth by Coutnry in 2019',
+         x = 'GDP per Capita (USD)',
+         y = 'Life Expectancy at Birth',
+         color = 'Region',
+         size = 'Population')
+plot
+```
+
+```{r}
+ggsave('plot.png', width = 7, height = 5, units = 'in', dpi = 600)
+```
+
+```{r warning=FALSE}
+plot_ly(data_2019, x = ~gdp_per_capita, y = ~life_expectancy,
+        color = ~region_name, text = ~country_name, size = ~population,
+        type = 'scatter', mode = 'markers', sizes = c(10, 50),
+        marker = list(symbol = 'circle', sizemode = 'diameter'))
+```
+
+```{r}
+plotly::ggplotly(plot)
+```
+
