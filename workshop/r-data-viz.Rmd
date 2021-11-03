@@ -11,8 +11,8 @@ install.packages('librarian')
 librarian::shelf(tidyverse, janitor, countrycode, plotly)
 ```
 
-```{r message=FALSE}
-pop <- readr::read_csv('data/population.csv', skip = 4)
+```{r}
+pop <- readr::read_csv('data/population.csv', skip = 4, show_col_types = FALSE)
 pop
 ```
 
@@ -33,8 +33,8 @@ pop <- tidyr::pivot_longer(data = pop, cols = starts_with('x'),
 pop
 ```
 
-```{r message=FALSE}
-pop <- read_csv('data/population.csv', skip = 4) %>%
+```{r}
+pop <- read_csv('data/population.csv', skip = 4, show_col_types = FALSE) %>%
     clean_names() %>%
     select(-'indicator_name', -'indicator_code') %>%
     pivot_longer(cols = starts_with('x'), names_to = 'year',
@@ -44,7 +44,7 @@ pop
 
 ```{r}
 read_world_bank_data <- function(file_path, variable_name) {
-    df <- readr::read_csv(file_path, skip = 4) %>%
+    df <- readr::read_csv(file_path, skip = 4, show_col_types = FALSE) %>%
         janitor::clean_names() %>%
         dplyr::select(-'indicator_name', -'indicator_code') %>%
         tidyr::pivot_longer(cols = starts_with('x'), names_to = 'year',
@@ -53,12 +53,12 @@ read_world_bank_data <- function(file_path, variable_name) {
 }
 ```
 
-```{r message=FALSE}
+```{r}
 gdp <- read_world_bank_data('data/gdp.csv', 'gdp')
 gdp
 ```
 
-```{r message=FALSE}
+```{r}
 lexp <- read_world_bank_data('data/life_expectancy.csv', 'life_expectancy')
 lexp
 ```
@@ -81,8 +81,8 @@ merged <- lexp %>% dplyr::select(-'country_name') %>%
 merged
 ```
 
-```{r message=FALSE}
-regions <- readr::read_csv('data/regions.csv') %>%
+```{r}
+regions <- readr::read_csv('data/regions.csv', show_col_types = FALSE) %>%
     janitor::clean_names()
 regions
 ```
@@ -126,27 +126,37 @@ ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
 
 ```{r}
 ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
-    geom_point(aes(color = region_name, size = population))
+    geom_point() +
+    scale_x_log10()
 ```
 
 ```{r}
 ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
-    geom_point(aes(color = region_name, size = population)) + 
-    scale_size(range = c(2,10))
+    geom_point(aes(color = region_name, size = population)) +
+    scale_x_log10()
 ```
 
 ```{r}
 ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
-    geom_point(aes(color = region_name, size = population)) + 
-    scale_size(range = c(2,10)) +
-    geom_smooth(formula = y ~ log(x), method = 'lm')
+    geom_point(aes(color = region_name, size = population)) +
+    scale_x_log10() +
+    scale_size(range = c(1,10))
+```
+
+```{r}
+ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
+    geom_point(aes(color = region_name, size = population)) +
+    scale_x_log10() +
+    scale_size(range = c(1,10)) +
+    geom_smooth(formula = y ~ x, method = 'lm')
 ```
 
 ```{r}
 plot <- ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
-    geom_point(aes(color = region_name, size = population)) + 
-    scale_size(range = c(2,10)) +
-    geom_smooth(formula = y ~ log(x), method = 'lm', se = FALSE,
+    geom_point(aes(color = region_name, size = population)) +
+    scale_x_log10() +
+    scale_size(range = c(1,10)) +
+    geom_smooth(formula = y ~ x, method = 'lm', se = FALSE,
                 color = 'black', linetype = 'dashed') +
     labs(title = 'Health and Wealth by Coutnry in 2019',
          x = 'GDP per Capita (USD)',
@@ -163,8 +173,9 @@ ggsave('plot.png', width = 7, height = 5, units = 'in', dpi = 600)
 ```{r warning=FALSE}
 plot_ly(data_2019, x = ~gdp_per_capita, y = ~life_expectancy,
         color = ~region_name, text = ~country_name, size = ~population,
-        type = 'scatter', mode = 'markers', sizes = c(10, 50),
-        marker = list(symbol = 'circle', sizemode = 'diameter'))
+        type = 'scatter', mode = 'markers', sizes = c(5, 50),
+        marker = list(symbol = 'circle', sizemode = 'diameter')) %>%
+    layout(xaxis = list(type = 'log'))
 ```
 
 ```{r}
