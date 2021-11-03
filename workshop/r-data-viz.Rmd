@@ -8,7 +8,8 @@ install.packages('librarian')
 ```
 
 ```{r include=FALSE}
-librarian::shelf(tidyverse, janitor, countrycode, plotly)
+librarian::shelf(tidyverse, janitor, countrycode, plotly, gganimate, gifski,
+                 transformr)
 ```
 
 ```{r}
@@ -30,6 +31,11 @@ pop
 pop <- tidyr::pivot_longer(data = pop, cols = starts_with('x'),
                            names_to = 'year', names_prefix = 'x',
                            values_to = 'population')
+pop
+```
+
+```{r}
+pop <- dplyr::mutate(pop, year = as.integer(year))
 pop
 ```
 
@@ -69,7 +75,7 @@ merged
 ```
 
 ```{r}
-merged <- merged %>% dplyr::select(-country_name.y) %>% 
+merged <- merged %>% dplyr::select(-country_name.y) %>%
     dplyr::rename(country_name = country_name.x) %>%
     dplyr::mutate(gdp_per_capita = gdp / population)
 merged
@@ -102,7 +108,7 @@ countrycode(regions$country_name,
 ```
 
 ```{r}
-regions <- regions %>% 
+regions <- regions %>%
     mutate(country_code = countrycode(country_name, origin = 'country.name',
                                       destination = 'iso3c')) %>%
     select(-country_name)
@@ -182,3 +188,18 @@ plot_ly(data_2019, x = ~gdp_per_capita, y = ~life_expectancy,
 plotly::ggplotly(plot)
 ```
 
+```{r message=FALSE}
+ggplot(merged, aes(x = gdp_per_capita, y = life_expectancy)) +
+    geom_point(aes(color = region_name, size = population)) +
+    scale_x_log10() +
+    scale_size(range = c(1,10)) +
+    geom_smooth(formula = y ~ x, method = 'lm', se = FALSE,
+                color = 'black', linetype = 'dashed') +
+    labs(title = 'Health and Wealth by Coutnry in {frame_time}',
+         x = 'GDP per Capita (USD)',
+         y = 'Life Expectancy at Birth',
+         color = 'Region',
+         size = 'Population') +
+    transition_time(year) +
+    ease_aes('linear')
+```
