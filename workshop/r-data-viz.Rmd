@@ -192,8 +192,16 @@ plot_ly(data_2019, x = ~gdp_per_capita, y = ~life_expectancy,
 plotly::ggplotly(plot)
 ```
 
+```{r}
+animation_data <- merged %>%
+    dplyr::group_by(country_code) %>%
+    dplyr::filter(n() == 60)
+animation_data
+```
+
 ```{r message=FALSE}
-animated_plot <- ggplot(merged, aes(x = gdp_per_capita, y = life_expectancy)) +
+animated_plot <- ggplot(animation_data,
+                        aes(x = gdp_per_capita, y = life_expectancy)) +
     geom_point(aes(color = region_name, size = population)) +
     scale_x_log10() +
     scale_size(range = c(1,10)) +
