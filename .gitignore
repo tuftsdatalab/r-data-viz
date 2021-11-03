@@ -38,8 +38,9 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
-# RStudio Notebook Preview
-*.nb.html
+# knitr outputs
+*.html
+*.pdf
 
 # Saved Figures and Animations
 *.png

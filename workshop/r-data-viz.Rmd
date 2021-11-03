@@ -1,6 +1,8 @@
 ---
 title: "R for Data Manipulation and Visualization"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r eval=FALSE, include=FALSE}
