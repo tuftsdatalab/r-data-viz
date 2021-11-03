@@ -3,12 +3,12 @@ title: "R for Data Manipulation and Visualization"
 output: html_notebook
 ---
 
-```{r include=FALSE}
+```{r eval=FALSE, include=FALSE}
 install.packages('librarian')
 ```
 
 ```{r include=FALSE}
-librarian::shelf(tidyverse, janitor, countrycode, plotly)
+librarian::shelf(tidyverse, janitor, countrycode, plotly, gganimate, gifski)
 ```
 
 ```{r}
@@ -32,13 +32,18 @@ pop <- tidyr::pivot_longer(data = pop, cols = starts_with('x'),
                            values_to = 'population')
 pop
 ```
+```{r}
+pop <- dplyr::mutate(pop, year = as.numeric(year))
+pop
+```
 
 ```{r}
 pop <- read_csv('data/population.csv', skip = 4, show_col_types = FALSE) %>%
     clean_names() %>%
     select(-'indicator_name', -'indicator_code') %>%
     pivot_longer(cols = starts_with('x'), names_to = 'year',
-                 names_prefix = 'x', values_to = 'population')
+                 names_prefix = 'x', values_to = 'population') %>%
+    mutate(year = as.integer(year))
 pop
 ```
 
@@ -48,7 +53,8 @@ read_world_bank_data <- function(file_path, variable_name) {
         janitor::clean_names() %>%
         dplyr::select(-'indicator_name', -'indicator_code') %>%
         tidyr::pivot_longer(cols = starts_with('x'), names_to = 'year',
-                            names_prefix = 'x', values_to = variable_name)
+                            names_prefix = 'x', values_to = variable_name) %>%
+        dplyr::mutate(year = as.integer(year))
     return(df)
 }
 ```
@@ -110,12 +116,12 @@ regions
 ```
 
 ```{r}
-merged <- inner_join(merged, regions, by = 'country_code')
+merged <- inner_join(merged, regions, by = 'country_code') %>% drop_na()
 merged
 ```
 
 ```{r}
-data_2019 <- merged %>% filter(year == 2019) %>% drop_na()
+data_2019 <- merged %>% filter(year == 2019)
 data_2019
 ```
 
@@ -182,3 +188,18 @@ plot_ly(data_2019, x = ~gdp_per_capita, y = ~life_expectancy,
 plotly::ggplotly(plot)
 ```
 
+```{r message=FALSE}
+ggplot(merged, aes(x = gdp_per_capita, y = life_expectancy)) +
+    geom_point(aes(color = region_name, size = population)) +
+    scale_x_log10() +
+    scale_size(range = c(1,10)) +
+#    geom_smooth(formula = y ~ x, method = 'lm', se = FALSE,
+#                color = 'black', linetype = 'dashed') +
+    labs(title = 'Health and Wealth by Coutnry in {frame_time}',
+         x = 'GDP per Capita (USD)',
+         y = 'Life Expectancy at Birth',
+         color = 'Region',
+         size = 'Population') +
+    transition_time(year) +
+    ease_aes('linear')
+```
