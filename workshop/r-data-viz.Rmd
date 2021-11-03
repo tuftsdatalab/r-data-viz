@@ -203,9 +203,11 @@ animated_plot <- ggplot(merged, aes(x = gdp_per_capita, y = life_expectancy)) +
     transition_time(year) +
     ease_aes('linear')
 
-animation <- gganimate::animate(animated_plot, duration = 15, width = 5, height = 5,
-                                units = 'in', res = 72)
+# create animation out of animated plot recipe
+animation <- gganimate::animate(animated_plot, duration = 15, width = 5, 
+                                height = 5, units = 'in', res = 72)
 
+# display animation
 animation
 ```
 
