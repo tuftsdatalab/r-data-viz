@@ -1,4 +1,4 @@
-name: intro-r
+name: r-data-viz
 channels:
  - conda-forge
 dependencies:
