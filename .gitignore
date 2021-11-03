@@ -40,3 +40,6 @@ vignettes/*.pdf
 
 # RStudio Notebook Preview
 *.nb.html
+
+# Saved Figures
+*.png
