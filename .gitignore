@@ -41,5 +41,6 @@ vignettes/*.pdf
 # RStudio Notebook Preview
 *.nb.html
 
-# Saved Figures
+# Saved Figures and Animations
 *.png
+*.gif
