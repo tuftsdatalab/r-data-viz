@@ -39,9 +39,9 @@ vignettes/*.pdf
 .Renviron
 
 # knitr outputs
-*.html
-*.pdf
+workshop/**/*.html
+workshop/**/*.pdf
 
-# Saved Figures and Animations
-*.png
-*.gif
+# saved visualizations
+workshop/**/*.png
+workshop/**/*.gif
