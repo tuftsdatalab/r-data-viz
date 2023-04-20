@@ -1,230 +1,478 @@
 ---
 title: "R for Data Manipulation and Visualization"
+author: "Uku-Kaspar Uustalu"
+date: "April 19, 2023"
 output:
-  html_document:
-    df_print: paged
+  html_notebook:
+    toc: yes
 ---
 
-```{r eval=FALSE, include=FALSE}
+# Installing and Attaching Packages
+
+We will be using `librarian` for package management as it greatly simplifies the process of installing and attaching packages. It needs to be installed using `install.packages()` unless already installed.
+
+```{r, eval=FALSE, message=FALSE}
 install.packages('librarian')
 ```
 
-```{r include=FALSE}
-librarian::shelf(tidyverse, janitor, countrycode, plotly, gganimate, gifski,
-                 transformr)
+The `librarian::shelf()` function checks whether all listed packages are installed and installs them if needed. Then it loads all listed packages into the environment. You can think of it as a combination of `install.packages()` and `library()` except it will not re-install a package if it is already installed. Here are the packages we will be using:
+
+-   `readr` is a tidyverse package that allows for fast reading and writing of rectangular text data
+-   `janitor` is a package commonly used to clean messy data and quickly format column names
+-   `dpyr` is a tidyverse package allowing for easy data manipulation and variable grouping
+-   `magrittr` is a tidyverse package that offers a set of operators useful for constructing pipelines
+-   `tidyr` is a tidyverse package intended for data restructuring with the goal of achieving tidy data
+-   `tidyselect` is a tidyverse package that allows for the easy selection of columns based on criteria
+-   `ggplot2` is a tidyverse package and arguably the most popular R data visualization package
+-   `plotly` allows for the easy generation of various interactive data visualizations including maps
+-   `gganimate` and `gifski` can be used to generate and export various animated visualizations
+-   `stringr` is a tidyverse package allowing for easy manipulation of textual (string) data
+-   `lubridate` is a tidyverse package allowing for the easy manipulation of dates and time series
+-   `ggmap` can be used to automatically add suitable geospatial base maps to `ggplot2` visualizations
+-   `leaflet` allows for the creation and customization of various interactive geospatial maps
+
+```{r, message=FALSE}
+librarian::shelf(readr, janitor, dplyr, magrittr, tidyr, tidyselect, ggplot2, 
+                 plotly, gganimate, gifski, stringr, lubridate, ggmap, leaflet)
 ```
 
-```{r}
-pop <- readr::read_csv('data/population.csv', skip = 4, show_col_types = FALSE)
-pop
-```
+# Reading and Cleaning Data
+
+For the first part of this tutorial, we will be using the following data files from the `data` directory to investigate the relationship between health and wealth:
+
+-   `gdp.csv` -- World Bank gross domestic product (GDP) estimates (in USD) from 1960 until 2021
+-   `life-expectancy.csv` -- World Bank life expectancy at birth estimates from 1960 until 2020
+-   `m49.csv` -- United Nations [M49](https://en.wikipedia.org/wiki/UN_M49) Standard Country or Area Codes for Statistical Use
+-   `population.csv` -- World Bank country and region population estimates from 1960 until 2021
+
+All the data are in [IEFT RFC 4180 CSV](https://www.rfc-editor.org/info/rfc4180) (comma-separated values) format and the first four rows of the World Bank data files contain metadata with the actual data table starting on row five.
+
+Let us start with the population data. CSV data files can be easily read in using the `readr::read_csv()` function. The function reads the contents of the file into a `tibble` object (which is basically an advanced data frame) and supports various additional arguments. For example, we can utilize the `skip` argument to skip the first four rows of the CSV file as the data table does not start until row five.
 
 ```{r}
-pop <- janitor::clean_names(pop)
-pop
+population <- readr::read_csv(file = 'data/population.csv',
+                              skip = 4,
+                              show_col_types = FALSE)
 ```
 
-```{r}
-pop <- dplyr::select(pop, -'indicator_name', -'indicator_code')
-pop
-```
+Upon file read, the function outputs a summary outlining the column names and types of the data by default. This can be silenced by specifying the `show_col_types=FALSE` when calling the function.
+
+Now the World Bank population data is stored in a `tibble` named `population`. Calling the name of the `data.frame` variable will display the data in a neat interactive table viewer.
 
 ```{r}
-pop <- tidyr::pivot_longer(data = pop, cols = starts_with('x'),
-                           names_to = 'year', names_prefix = 'x',
-                           values_to = 'population')
-pop
+population
 ```
 
-```{r}
-pop <- dplyr::mutate(pop, year = as.integer(year))
-pop
-```
+We see that the `tibble` appears to have the following columns:
+
+-   `Country Name` -- English name of the country
+-   `Country Code` -- [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) country code
+-   `Indicator Name` -- name of the indicator represented by the data
+-   `Indicator Code` -- World Bank code for the indicator
+-   `1960` ... `2021` -- population estimates by year
+
+We also see that the table has 266 rows and 66 columns. The number of rows and columns of a `tibble` or other data-frame-like object can also be programmatically extracted by calling the `dim()` function.
 
 ```{r}
-pop <- read_csv('data/population.csv', skip = 4, show_col_types = FALSE) %>%
-    clean_names() %>%
-    select(-'indicator_name', -'indicator_code') %>%
-    pivot_longer(cols = starts_with('x'), names_to = 'year',
-                 names_prefix = 'x', values_to = 'population') %>%
-    mutate(year = as.integer(year))
-pop
+dim(population)
 ```
+
+The list of column names can be programmatically extracted via the `names()` function.
+
+```{r}
+names(population)
+```
+
+Note how the first four column names contain a space and the rest of the column names are all numbers. This is bad practice as various functions do not work well with column names that either contain a space or start with a number. It is common to replace all spaces with either periods or underscores and add a letter prefix to any column names consisting solely of numbers.
+
+This can be easily achieved by using the `janitor::clean_names()` function, which takes the original table as input and outputs a new table where the column names have been properly formatted.
+
+```{r}
+population <- janitor::clean_names(population)
+names(population)
+```
+
+We know that the `population` table stores population values, so the columns `indicator_name` and `indicator_code` are redundant. These can be dropped using the `dplyr::select()` function. The first argument to the function is the table variable itself and following arguments specify which columns to keep or drop. For example, explicitly specifying a column name will result in only the listed column being selected and adding a minus sign in front will reverse the selection, meaning any specified column name preceded with a minus sign will cause it to be dropped and all remaining columns to be selected.
+
+The output is a new table with the specified selection applied. There are numerous different ways one can select columns using `dplyr::select()`. For example, one could use a `tidyselect` function to select a set of columns based on a criterion. Refer to the function documentation for more information.
+
+```{r}
+population <- dplyr::select(population, -indicator_name, -indicator_code)
+```
+
+We can validate that the desired columns have been removed by either listing the column names via the `names()` function again or taking a quick peek at the table using the `head()` function. It displays the first six rows of the table by default, but a this can be changed by specifying the `n` argument.
+
+```{r}
+head(population)
+```
+
+Knowing that the World Bank GDP data follows the exact same format as the World Bank population data , we can read the CSV file clean the column names, and drop the unneeded columns all in one go by combining the `readr::read_csv()`, `janitor::clean_names()`, and `dplyr::select()` functions using the forward pipe operator `%>%` from the `magrittr` package. The `%>%` operator takes either a variable or the output of a function and feeds it into the following function as its first argument.
+
+```{r}
+gdp <- readr::read_csv(file = 'data/gdp.csv',
+                       skip = 4, 
+                       show_col_types = FALSE) %>%
+    janitor::clean_names() %>%
+    dplyr::select(-indicator_name, -indicator_code)
+```
+
+In the pipeline above, the `tibble` outputted by the `readr::read_csv()` function gets piped into the `janitor::clean_names()` function, the output of which gets passed into the `dplyr::select()` function. The output of the final function is saved into the variable `gdp`. The `head()` function can be used to take a quick look at the new table and ensure the constructed pipeline worked as expected.
+
+```{r}
+head(gdp)
+```
+
+# Long vs Wide Data
+
+GDP on its own is not a good indicator of the wealth of a country as countries with more people tend to have higher GDP. But if we were to normalize GDP by population, then the resulting GDP per capita values can be compared across countries and used as a proxy for wealth. To do so, we must be able to match up the GDP and population values for each unique combination of country and year.
+
+The GDP and population tables are currently in wide format -- each row represents a unique country and each column represents a unique year with the cell values representing GDP or population estimates. While this wide format has many advantages and is commonly used in geospatial applications, it does complicate joining various data sets. One option would be to treat both tables as matrices and calculate GDP per capita by dividing the GDP matrix with the population matrix. However, both tables need to have the exact same layout with the same number of countries and years in the same exact order for this to work and the result to be reliable. Ensuring this is not a trivial task, so this method would involve a lot of work to produce reliable results.
+
+Alternatively the two tables could be joined by country. Then we will have an extra-wide table with two sets of year columns -- one set of year columns for population and another set of year columns for GDP. Then we would need to create another new column for each year by dividing the corresponding GDP column with the corresponding population column, resulting in another new set of year columns. As you can see, this approach would quickly lead to a very messy and difficult to manage table and would also involve a lot of work, making it far from preferred.
+
+The easiest option for calculating GDP per capita would involve converting both data tables into a long format, where each row represents a single unique observation (estimation). Instead of having countries in rows and years in columns, each row would instead represent a unique country and year combination. This would allow us to easily combine data on both country and year, ensuring that the population and GDP values for each country-year combination get matched appropriately.
+
+We can use the `tidyr::pivot_longer()` function to covert wide format tables into long format tables. The following arguments are of interest to us when calling the function:
+
+-   `data` -- the `tibble` object to convert from wide to long format
+-   `cols` -- the columns to pivot into longer format (the columns containing the data values)
+-   `names_to` -- name of the column in the long table that stores the column names from the wide table
+-   `names_prefix` -- the prefix to remove from the specified wide table column names (if any)
+-   `values_to` -- name of the column in the long table that sores the data values from the wide table
+
+The columns we would like to convert to long format are the year columns. These are all prefixed with an `x` character. We can use the `tidyselect::start_with()` function to select all the columns beginning with an `x` character and pass those as the `cols` argument. The column names should be stripped of the preceding `x` character, so we pass that as the `names_prefix` argument. The stripped column names represent years and the cell values represent population represent population estimates, so finally we specify `names_to = "year"` and `values_to = "population"` as the final arguments.
+
+```{r}
+population_long <- tidyr::pivot_longer(data = population,
+                                       cols = tidyselect::starts_with('x'),
+                                       names_to = 'year',
+                                       names_prefix = 'x',
+                                       values_to = 'population')
+population_long
+```
+
+Now we have a new long population `tibble` called `population_long`, where each row represents a unique country and year combination. But note how the data type of the `year` column appears to be listed as `chr`, implying that the data is in textual `character` format instead of numbers. Let us confirm this by extracting the column using the `$` operator and checking its data type via the `class()` function.
+
+```{r}
+class(population_long$year)
+```
+
+The `dplyr::mutate()` function can be combined with the base `as.integer()` function to convert the `year` column back into numeric format. The first argument of the `dpylr::mutate()` function is the data table and subsequent arguments specify how to create new columns or modify existing columns.
+
+For example, to apply the `as.integer()` function on the whole `year` column and then replace the `year` column with the new values, we would specify `year = as.integer(year)` as an argument.
+
+```{r}
+population_long <- dplyr::mutate(population_long,
+                                 year = as.integer(year))
+class(population_long$year)
+```
+
+Note how now the data type of the `year` column is listed as `int` or `integer`, meaning it is numeric.
+
+Now let us convert the GDP table into long format as well. As with the population table, we will first need to use `tidyr::pivot_longer()` to pivot the table and then `as.numeric()` with `dplyr::mutate()` to fix the data type of the `year` column. These can be combined into a pipeline using the `%>%` operator.
+
+```{r}
+gdp_long <- gdp %>%
+    tidyr::pivot_longer(cols = tidyselect::starts_with('x'),
+                        names_to = 'year',
+                        names_prefix = 'x',
+                        values_to = 'gdp') %>%
+    dplyr::mutate(year = as.integer(year))
+
+gdp_long
+```
+
+# Joining Tables
+
+Finally we are ready to combine the population and GDP tables. The `dplyr` package has four different join functions we could utilize:
+
+-   `left_join()` -- include all rows from the left table and only matching rows from the right table
+-   `right_join()` -- include all rows from the right table and only matching tows from the left table
+-   `full_join()` -- include all rows from both tables regardless of whether they have a match
+-   `inner_join()` -- only include rows from both tables that have matches in the other table
+
+All the aforementioned functions require at least three arguments:
+
+-   `x` -- the left table
+-   `y` -- the right table
+-   `by` -- the column(s) to join on
+
+We would like to join on each unique country and year combination. As spellings of country names might differ between tables, it is good practice to always use the [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) country code or some other analogous unique identifier to distinguish between countries. The country code for each country is determined by an international standard and should not differ between tables, allowing us to reliably join the data. Hence we will specify `by = c("country_code", "year")` to perform the join on unique country-year combinations use the `dplyr::inner_join()` function to only keep year-country combinations that are present in both tables.
+
+```{r}
+data <- dplyr::inner_join(x = population_long,
+                          y = gdp_long,
+                          by = c('country_code', 'year'))
+head(data)
+```
+
+Note how now the data are joined but the resulting table has two different `country_name` columns. That is because this column was present in both of the joined tables and was not omitted before the join. We can use the `dplyr::select()` to drop one of the columns by adding a minus sign in front of its name and rename the other one using the `new_name = old_name` convention. Then we can use `dplyr::mutate()` to add a new `gdp_per_capita` column by dividing the `gdp` column with the `population` column. We can combine these two operations into a pipeline using the `%>%` operator.
+
+```{r}
+data <- data %>%
+    dplyr::select(-country_name.y,
+                  country_name = country_name.x) %>%
+    dplyr::mutate(gdp_per_capita = gdp / population)
+
+data
+```
+
+# Defining Functions
+
+Now we would also like to add life expectancy information to this joined table. Knowing that all World Bank data tables follow the same format, we can easily convert the workflow from before into a function that reads in a World Bank data table, drops unneeded columns, converts it to long format, and ensures the year is in numeric format. That function would only need two inputs -- the path of the CSV file and the name of the indicator represented by the data. (This name will be used as the column name for the values column in the long format table.) Let us define this function and use it to read in the World Bank life expectancy table and convert it to long format.
 
 ```{r}
 read_world_bank_data <- function(file_path, variable_name) {
-    df <- readr::read_csv(file_path, skip = 4, show_col_types = FALSE) %>%
+    readr::read_csv(file_path,
+                    skip = 4,
+                    show_col_types = FALSE) %>%
         janitor::clean_names() %>%
-        dplyr::select(-'indicator_name', -'indicator_code') %>%
-        tidyr::pivot_longer(cols = starts_with('x'), names_to = 'year',
-                            names_prefix = 'x', values_to = variable_name) %>%
-        dplyr::mutate(year = as.integer(year))
-    return(df)
+        dplyr::select(-indicator_name,
+                      -indicator_code) %>%
+        tidyr::pivot_longer(cols = starts_with('x'),
+                            names_to = 'year',
+                            names_prefix = 'x',
+                            values_to = variable_name) %>%
+        dplyr::mutate(year = as.integer(year)) %>%
+        return()
 }
 ```
 
 ```{r}
-gdp <- read_world_bank_data('data/gdp.csv', 'gdp')
-gdp
+life_expectancy <- read_world_bank_data('data/life-expectancy.csv',
+                                        'life_expectancy')
+head(life_expectancy)
 ```
 
-```{r}
-lexp <- read_world_bank_data('data/life_expectancy.csv', 'life_expectancy')
-lexp
-```
+Now we can use a pipeline to drop the redundant `country_name` column and then join the life expectancy table with the rest of our data. Remember that the output of the last function in a pipeline is specified as the first argument of the following function by default. We can override this by referring to the output of the previous function as `.` and specifying it elsewhere int the following function call.
 
 ```{r}
-merged <- dplyr::inner_join(pop, gdp, by = c('country_code', 'year'))
-merged
+data <- life_expectancy %>%
+    dplyr::select(-country_name) %>%
+    dplyr::inner_join(x = data, 
+                      y = .,
+                      by = c('country_code', 'year'))
+data
 ```
 
-```{r}
-merged <- merged %>% dplyr::select(-country_name.y) %>%
-    dplyr::rename(country_name = country_name.x) %>%
-    dplyr::mutate(gdp_per_capita = gdp / population)
-merged
-```
+Finally we would also like to know which [United Nations regional geoscheme](https://en.wikipedia.org/wiki/United_Nations_geoscheme) the country belongs to. Information on this is available in the United Nations [M49](https://en.wikipedia.org/wiki/UN_M49) table. We can utilize a pipeline to read in and clean the table all in one go. Note that as this is a standard CSV table, there is no need to skip any rows.
 
 ```{r}
-merged <- lexp %>% dplyr::select(-'country_name') %>%
-    dplyr::inner_join(merged, ., by = c('country_code', 'year'))
-merged
-```
-
-```{r}
-regions <- readr::read_csv('data/regions.csv', show_col_types = FALSE) %>%
+m49 <- readr::read_csv(file = 'data/m49.csv',
+                       show_col_types = FALSE) %>%
     janitor::clean_names()
-regions
+
+head(m49)
+```
+
+Note how this table contains a lot of information on the various groups and codes assigned to each country. We are only interested in the name of the region the country belongs into and need the [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) code assigned to the country to join the data. Let us use the `%>%` operator to create a pipeline that selects the desired columns and then performs the join.
+
+```{r}
+data <- m49 %>%
+    dplyr::select(region_name,
+                  country_code = iso_alpha3_code) %>%
+    dplyr::inner_join(data,
+                      by = 'country_code') %>%
+    dplyr::select(country_name,
+                  country_code,
+                  region_name,
+                  year,
+                  tidyselect::everything())
+data
+```
+
+Note how we can use `dplyr::select()` along with `tidyselect:everything()` to rearrange the order of specified columns.
+
+# Row Filtering and Static Line Graphs
+
+```{r}
+data %>%
+    dplyr::filter(country_code == 'USA') %>%
+    head()
+```
+
+```{r, warnings=FALSE}
+data %>%
+    dplyr::filter(country_code == 'USA') %>%
+    ggplot2::ggplot(mapping = ggplot2::aes(x = year, y = population)) +
+    ggplot2::geom_line()
+```
+
+```{r, warnings=FALSE}
+data %>%
+    dplyr::filter(country_code %in% c('USA', 'CAN', 'MEX')) %>%
+    ggplot2::ggplot(mapping = ggplot2::aes(x = year,
+                                           y = gdp_per_capita,
+                                           color = country_name)) +
+    ggplot2::geom_line()
+```
+
+# Visualizing Distributions and Correlations
+
+```{r}
+data2020 <- data %>%
+    dplyr::filter(year == 2020) %>%
+    tidyr::drop_na()
+
+head(data2020)
 ```
 
 ```{r}
-help(countrycode)
+ggplot2::ggplot(data = data2020,
+                mapping = ggplot2::aes(x = life_expectancy)) +
+    ggplot2::geom_histogram(binwidth = 1)
 ```
 
 ```{r}
-countrycode(c('United States of America', 'Estonia'),
-            origin = 'country.name', destination = 'iso3c')
+ggplot2::ggplot(data = data2020, 
+                mapping = ggplot2::aes(x = gdp_per_capita,
+                                       y = life_expectancy)) +
+    ggplot2::geom_point()
 ```
 
 ```{r}
-countrycode(regions$country_name,
-            origin = 'country.name', destination = 'iso3c')
+ggplot2::ggplot(data = data2020, 
+                mapping = ggplot2::aes(x = gdp_per_capita,
+                                       y = life_expectancy)) +
+    ggplot2::geom_density2d_filled()
 ```
 
 ```{r}
-regions <- regions %>%
-    mutate(country_code = countrycode(country_name, origin = 'country.name',
-                                      destination = 'iso3c')) %>%
-    select(-country_name)
-regions
+ggplot2::ggplot(data = data2020, 
+                mapping = ggplot2::aes(x = gdp_per_capita,
+                                       y = life_expectancy)) +
+    ggplot2::geom_point() +
+    ggplot2::scale_x_log10()
 ```
 
 ```{r}
-merged <- inner_join(merged, regions, by = 'country_code') %>% drop_na()
-merged
+ggplot2::ggplot(data = data2020, 
+                mapping = ggplot2::aes(x = gdp_per_capita,
+                                       y = life_expectancy)) +
+    ggplot2::geom_density2d_filled() +
+    ggplot2::scale_x_log10()
 ```
 
 ```{r}
-data_2019 <- merged %>% filter(year == 2019)
-data_2019
+ggplot2::ggplot(data = data2020, 
+                mapping = ggplot2::aes(x = gdp_per_capita,
+                                       y = life_expectancy,
+                                       color = region_name,
+                                       size = population)) +
+    ggplot2::geom_point() +
+    ggplot2::scale_x_log10()
 ```
 
 ```{r}
-ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
-    geom_point()
+ggplot2::ggplot(data = data2020, 
+                mapping = ggplot2::aes(x = gdp_per_capita,
+                                       y = life_expectancy,
+                                       color = region_name,
+                                       size = population)) +
+    ggplot2::geom_point() +
+    ggplot2::scale_x_log10() +
+    ggplot2::scale_size(range = c(1,10))
 ```
 
 ```{r}
-ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
-    geom_point() +
-    scale_x_log10()
+ggplot2::ggplot(data = data2020, 
+                mapping = ggplot2::aes(x = gdp_per_capita,
+                                       y = life_expectancy)) +
+    ggplot2::geom_point(mapping = ggplot2::aes(color = region_name,
+                                               size = population)) +
+    ggplot2::scale_x_log10() +
+    ggplot2::scale_size(range = c(1,10)) +
+    ggplot2::geom_smooth(formula = y ~ x, method = 'lm')
 ```
 
 ```{r}
-ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
-    geom_point(aes(color = region_name, size = population)) +
-    scale_x_log10()
-```
-
-```{r}
-ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
-    geom_point(aes(color = region_name, size = population)) +
-    scale_x_log10() +
-    scale_size(range = c(1,10))
-```
-
-```{r}
-ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
-    geom_point(aes(color = region_name, size = population)) +
-    scale_x_log10() +
-    scale_size(range = c(1,10)) +
-    geom_smooth(formula = y ~ x, method = 'lm')
-```
-
-```{r}
-plot <- ggplot(data_2019, aes(x = gdp_per_capita, y = life_expectancy)) +
-    geom_point(aes(color = region_name, size = population)) +
-    scale_x_log10() +
-    scale_size(range = c(1,10)) +
-    geom_smooth(formula = y ~ x, method = 'lm', se = FALSE,
-                color = 'black', linetype = 'dashed') +
-    labs(title = 'Health and Wealth by Coutnry in 2019',
-         x = 'GDP per Capita (USD)',
-         y = 'Life Expectancy at Birth',
-         color = 'Region',
-         size = 'Population')
+plot <- ggplot2::ggplot(data = data2020, 
+                mapping = ggplot2::aes(x = gdp_per_capita,
+                                       y = life_expectancy)) +
+    ggplot2::geom_point(mapping = ggplot2::aes(color = region_name,
+                                               size = population)) +
+    ggplot2::scale_x_log10() +
+    ggplot2::scale_size(range = c(1,10)) +
+    ggplot2::geom_smooth(formula = y ~ x,
+                         method = 'lm',
+                         se = FALSE,
+                         color = 'black',
+                         linetype = 'dashed') +
+    ggplot2::labs(title = 'Health and Wealth by Coutnry in 2020',
+                  x = 'GDP per Capita (USD)',
+                  y = 'Life Expectancy at Birth',
+                 color = 'Region',
+                 size = 'Population')
 plot
 ```
 
-```{r}
-ggsave('plot.png', plot = plot, width = 7, height = 5, units = 'in', dpi = 300)
-```
+# Creating Interactive Visualizations
 
-```{r warning=FALSE}
-plot_ly(data_2019, x = ~gdp_per_capita, y = ~life_expectancy,
-        color = ~region_name, text = ~country_name, size = ~population,
-        type = 'scatter', mode = 'markers', sizes = c(5, 50),
-        marker = list(symbol = 'circle', sizemode = 'diameter')) %>%
-    layout(xaxis = list(type = 'log'))
+```{r, warning=FALSE}
+plotly::plot_ly(data = data2020,
+                x = ~gdp_per_capita,
+                y = ~life_expectancy,
+                color = ~region_name,
+                text = ~country_name,
+                size = ~population,
+                type = 'scatter',
+                mode = 'markers',
+                sizes = c(5, 50),
+                marker = list(symbol = 'circle',
+                              sizemode = 'diameter')) %>%
+    plotly::layout(xaxis = list(type = 'log'))
 ```
 
 ```{r}
 plotly::ggplotly(plot)
 ```
 
+# Creating Animatied Visualizations
+
 ```{r}
-animation_data <- merged %>%
+animation_data <- data %>%
+    tidyr::drop_na() %>%
     dplyr::group_by(country_code) %>%
-    dplyr::filter(n() == 60)
+    dplyr::filter(n() == 61)
+
 animation_data
 ```
 
-```{r message=FALSE}
-animated_plot <- ggplot(animation_data,
-                        aes(x = gdp_per_capita, y = life_expectancy)) +
-    geom_point(aes(color = region_name, size = population)) +
-    scale_x_log10() +
-    scale_size(range = c(1,10)) +
-    geom_smooth(formula = y ~ x, method = 'lm', se = FALSE,
-                color = 'black', linetype = 'dashed') +
-    labs(title = 'Health and Wealth by Coutnry in {frame_time}',
-         x = 'GDP per Capita (USD)',
-         y = 'Life Expectancy at Birth',
-         color = 'Region',
-         size = 'Population') +
-    transition_time(year) +
-    ease_aes('linear')
+```{r}
+animated_plot <- ggplot2::ggplot(data = animation_data,
+                                 mapping = ggplot2::aes(x = gdp_per_capita,
+                                                        y = life_expectancy)) +
+    ggplot2::geom_point(mapping = ggplot2::aes(color = region_name,
+                                               size = population)) +
+    ggplot2::scale_x_log10() +
+    ggplot2::scale_size(range = c(1,10)) +
+    ggplot2::geom_smooth(formula = y ~ x,
+                         method = 'lm',
+                         se = FALSE,
+                         color = 'black',
+                         linetype = 'dashed') +
+    ggplot2::labs(title = 'Health and Wealth by Coutnry in {frame_time}',
+                  x = 'GDP per Capita (USD)',
+                  y = 'Life Expectancy at Birth',
+                  color = 'Region',
+                  size = 'Population') +
+    gganimate::transition_time(year) +
+    gganimate::ease_aes('linear')
 
-# create animation out of animated plot recipe
-animation <- gganimate::animate(animated_plot, duration = 15, width = 5, 
-                                height = 5, units = 'in', res = 72)
+animation <- gganimate::animate(plot = animated_plot,
+                                renderer = gganimate::gifski_renderer(),
+                                duration = 15,
+                                width = 5, 
+                                height = 5,
+                                units = 'in',
+                                res = 72)
 ```
 
 ```{r}
-# display animation inline
-knitr::include_graphics(animation)
+gganimate::anim_save(filename = 'animation.gif',
+                     animation = animation)
 ```
 
 ```{r}
-gganimate::anim_save('animation.gif', animation = animation)
+knitr::include_graphics('animation.gif')
 ```
