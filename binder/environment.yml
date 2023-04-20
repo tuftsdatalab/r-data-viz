@@ -1,10 +1,13 @@
-name: intro-r
+name: r-data-viz
 channels:
  - conda-forge
 dependencies:
- - r-base
- - r-pacman
- - r-tidyverse
- - r-janitor
- - r-countrycode
- - r-plotly
+ - r-base=4.0.5
+ - r-librarian=1.8.1
+ - r-tidyverse=1.3.1
+ - r-janitor=2.1.0
+ - r-countrycode=1.3.0
+ - r-plotly=4.10.0
+ - r-gganimate=1.0.7
+ - r-gifski=1.4.3_1
+ - r-transformr=0.1.3

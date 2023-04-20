@@ -37,3 +37,11 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# knitr outputs
+workshop/**/*.html
+workshop/**/*.pdf
+
+# saved visualizations
+workshop/**/*.png
+workshop/**/*.gif
