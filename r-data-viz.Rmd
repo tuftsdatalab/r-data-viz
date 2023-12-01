@@ -1,7 +1,7 @@
 ---
 title: "R for Data Manipulation and Visualization"
 author: "Uku-Kaspar Uustalu"
-date: "April 20, 2023"
+date: "November 30, 2023"
 output:
   html_notebook:
     toc: yes
@@ -19,26 +19,22 @@ The `librarian::shelf()` function checks whether all listed packages are install
 
 -   `readr` is a tidyverse package that allows for fast reading and writing of rectangular text data
 -   `janitor` is a package commonly used to clean messy data and quickly format column names
--   `dpyr` is a tidyverse package allowing for easy data manipulation and variable grouping
+-   `dplyr` is a tidyverse package allowing for easy data manipulation and variable grouping
 -   `magrittr` is a tidyverse package that offers a set of operators useful for constructing pipelines
 -   `tidyr` is a tidyverse package intended for data restructuring with the goal of achieving tidy data
 -   `tidyselect` is a tidyverse package that allows for the easy selection of columns based on criteria
 -   `ggplot2` is a tidyverse package and arguably the most popular R data visualization package
 -   `plotly` allows for the easy generation of various interactive data visualizations including maps
 -   `gganimate` and `gifski` can be used to generate and export various animated visualizations
--   `stringr` is a tidyverse package allowing for easy manipulation of textual (string) data
--   `lubridate` is a tidyverse package allowing for the easy manipulation of dates and time series
--   `ggmap` can be used to automatically add suitable geospatial base maps to `ggplot2` visualizations
--   `leaflet` allows for the creation and customization of various interactive geospatial maps
 
 ```{r, message=FALSE}
 librarian::shelf(readr, janitor, dplyr, magrittr, tidyr, tidyselect, ggplot2, 
-                 plotly, gganimate, gifski, stringr, lubridate, ggmap, leaflet)
+                 plotly, gganimate, gifski)
 ```
 
 # Reading and Cleaning Data
 
-For the first part of this tutorial, we will be using the following data files from the `data` directory to investigate the relationship between health and wealth:
+We will be using the following data files from the `data` directory to investigate the relationship between health and wealth:
 
 -   `gdp.csv` -- World Bank gross domestic product (GDP) estimates (in USD) from 1960 until 2021
 -   `life-expectancy.csv` -- World Bank life expectancy at birth estimates from 1960 until 2020
@@ -57,7 +53,7 @@ population <- readr::read_csv(file = 'data/population.csv',
 
 Upon file read, the function outputs a summary outlining the column names and types of the data by default. This can be silenced by specifying the `show_col_types=FALSE` when calling the function.
 
-Now the World Bank population data is stored in a `tibble` named `population`. Calling the name of the `data.frame` variable will display the data in a neat interactive table viewer.
+Now the World Bank population data is stored in a `tibble` named `population`. Calling the name of the variable will display the data in a neat interactive table viewer.
 
 ```{r}
 population
@@ -106,7 +102,7 @@ We can validate that the desired columns have been removed by either listing the
 head(population)
 ```
 
-Knowing that the World Bank GDP data follows the exact same format as the World Bank population data , we can read the CSV file clean the column names, and drop the unneeded columns all in one go by combining the `readr::read_csv()`, `janitor::clean_names()`, and `dplyr::select()` functions using the forward pipe operator `%>%` from the `magrittr` package. The `%>%` operator takes either a variable or the output of a function and feeds it into the following function as its first argument.
+Knowing that the World Bank GDP data follows the exact same format as the World Bank population data , we can read the CSV file, clean the column names, and drop the unneeded columns all in one go by combining the `readr::read_csv()`, `janitor::clean_names()`, and `dplyr::select()` functions using the forward pipe operator `%>%` from the `magrittr` package. The `%>%` operator takes either a variable or the output of a function and feeds it into the following function as its first argument.
 
 ```{r}
 gdp <- readr::read_csv(file = 'data/gdp.csv',
