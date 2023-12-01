@@ -1,7 +1,7 @@
 ---
 title: "R for Data Manipulation and Visualization"
 author: "Uku-Kaspar Uustalu"
-date: "April 20, 2023"
+date: "November 30, 2023"
 output:
   html_notebook:
     toc: yes
@@ -19,7 +19,7 @@ The `librarian::shelf()` function checks whether all listed packages are install
 
 -   `readr` is a tidyverse package that allows for fast reading and writing of rectangular text data
 -   `janitor` is a package commonly used to clean messy data and quickly format column names
--   `dpyr` is a tidyverse package allowing for easy data manipulation and variable grouping
+-   `dplyr` is a tidyverse package allowing for easy data manipulation and variable grouping
 -   `magrittr` is a tidyverse package that offers a set of operators useful for constructing pipelines
 -   `tidyr` is a tidyverse package intended for data restructuring with the goal of achieving tidy data
 -   `tidyselect` is a tidyverse package that allows for the easy selection of columns based on criteria
@@ -57,7 +57,7 @@ population <- readr::read_csv(file = 'data/population.csv',
 
 Upon file read, the function outputs a summary outlining the column names and types of the data by default. This can be silenced by specifying the `show_col_types=FALSE` when calling the function.
 
-Now the World Bank population data is stored in a `tibble` named `population`. Calling the name of the `data.frame` variable will display the data in a neat interactive table viewer.
+Now the World Bank population data is stored in a `tibble` named `population`. Calling the name of the variable will display the data in a neat interactive table viewer.
 
 ```{r}
 population
@@ -106,7 +106,7 @@ We can validate that the desired columns have been removed by either listing the
 head(population)
 ```
 
-Knowing that the World Bank GDP data follows the exact same format as the World Bank population data , we can read the CSV file clean the column names, and drop the unneeded columns all in one go by combining the `readr::read_csv()`, `janitor::clean_names()`, and `dplyr::select()` functions using the forward pipe operator `%>%` from the `magrittr` package. The `%>%` operator takes either a variable or the output of a function and feeds it into the following function as its first argument.
+Knowing that the World Bank GDP data follows the exact same format as the World Bank population data , we can read the CSV file, clean the column names, and drop the unneeded columns all in one go by combining the `readr::read_csv()`, `janitor::clean_names()`, and `dplyr::select()` functions using the forward pipe operator `%>%` from the `magrittr` package. The `%>%` operator takes either a variable or the output of a function and feeds it into the following function as its first argument.
 
 ```{r}
 gdp <- readr::read_csv(file = 'data/gdp.csv',
