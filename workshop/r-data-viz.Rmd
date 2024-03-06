@@ -1,7 +1,7 @@
 ---
 title: "R for Data Manipulation and Visualization"
 author: "Uku-Kaspar Uustalu"
-date: "November 30, 2023"
+date: "March 6, 2024"
 output:
   html_notebook:
     toc: yes
@@ -40,10 +40,10 @@ librarian::shelf(readr, janitor, dplyr, magrittr, tidyr, tidyselect, ggplot2,
 
 For the first part of this tutorial, we will be using the following data files from the `data` directory to investigate the relationship between health and wealth:
 
--   `gdp.csv` -- World Bank gross domestic product (GDP) estimates (in USD) from 1960 until 2021
--   `life-expectancy.csv` -- World Bank life expectancy at birth estimates from 1960 until 2020
+-   `gdp.csv` -- World Bank gross domestic product (GDP) estimates (in USD) from 1960 until 2022
+-   `life-expectancy.csv` -- World Bank life expectancy at birth estimates from 1960 until 2021
 -   `m49.csv` -- United Nations [M49](https://en.wikipedia.org/wiki/UN_M49) Standard Country or Area Codes for Statistical Use
--   `population.csv` -- World Bank country and region population estimates from 1960 until 2021
+-   `population.csv` -- World Bank country and region population estimates from 1960 until 2022
 
 All the data are in [IEFT RFC 4180 CSV](https://www.rfc-editor.org/info/rfc4180) (comma-separated values) format and the first four rows of the World Bank data files contain metadata with the actual data table starting on row five.
 
