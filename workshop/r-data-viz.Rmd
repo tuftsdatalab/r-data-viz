@@ -55,7 +55,7 @@ population <- readr::read_csv(file = "data/population.csv",
                               show_col_types = FALSE)
 ```
 
-Upon file read, the function outputs a summary outlining the column names and types of the data by default. This can be silenced by specifying the `show_col_types=FALSE` when calling the function.
+Upon file read, the function outputs a summary outlining the column names and types of the data by default. This can be silenced by specifying `show_col_types=FALSE` when calling the function.
 
 Now the World Bank population data is stored in a `tibble` named `population`. Calling the name of the variable will display the data in a neat interactive table viewer.
 
@@ -69,9 +69,9 @@ We see that the `tibble` appears to have the following columns:
 -   `Country Code` -- [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) country code
 -   `Indicator Name` -- name of the indicator represented by the data
 -   `Indicator Code` -- World Bank code for the indicator
--   `1960` ... `2021` -- population estimates by year
+-   `1960` ... `2022` -- population estimates by year
 
-We also see that the table has 266 rows and 66 columns. The number of rows and columns of a `tibble` or other data-frame-like object can also be programmatically extracted by calling the `dim()` function.
+We also see that the table has 266 rows and 67 columns. The number of rows and columns of a `tibble` or other data-frame-like object can also be programmatically extracted by calling the `dim()` function.
 
 ```{r}
 dim(population)
@@ -140,7 +140,7 @@ We can use the `tidyr::pivot_longer()` function to covert wide format tables int
 -   `names_prefix` -- the prefix to remove from the specified wide table column names (if any)
 -   `values_to` -- name of the column in the long table that sores the data values from the wide table
 
-The columns we would like to convert to long format are the year columns. These are all prefixed with an `x` character. We can use the `tidyselect::start_with()` function to select all the columns beginning with an `x` character and pass those as the `cols` argument. The column names should be stripped of the preceding `x` character, so we pass that as the `names_prefix` argument. The stripped column names represent years and the cell values represent population represent population estimates, so finally we specify `names_to = "year"` and `values_to = "population"` as the final arguments.
+The columns we would like to convert to long format are the year columns. These are all prefixed with an `x` character. We can use the `tidyselect::starts_with()` function to select all the columns beginning with an `x` character and pass those as the `cols` argument. The column names should be stripped of the preceding `x` character, so we pass that as the `names_prefix` argument. The stripped column names represent years and the cell values represent population represent population estimates, so finally we specify `names_to = "year"` and `values_to = "population"` as the final arguments.
 
 ```{r}
 population_long <- tidyr::pivot_longer(data = population,
@@ -197,7 +197,7 @@ All the aforementioned functions require at least three arguments:
 -   `y` -- the right table
 -   `by` -- the column(s) to join on
 
-We would like to join on each unique country and year combination. As spellings of country names might differ between tables, it is good practice to always use the [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) country code or some other analogous unique identifier to distinguish between countries. The country code for each country is determined by an international standard and should not differ between tables, allowing us to reliably join the data. Hence we will specify `by = c("country_code", "year")` to perform the join on unique country-year combinations use the `dplyr::inner_join()` function to only keep year-country combinations that are present in both tables.
+We would like to join on each unique country and year combination. As spellings of country names might differ between tables, it is good practice to always use the [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) country code or some other analogous unique identifier to distinguish between countries. The country code for each country is determined by an international standard and should not differ between tables, allowing us to reliably join the data. Hence we will specify `by = c("country_code", "year")` to perform the join on unique country-year combinations using the `dplyr::inner_join()` function to only keep country-year combinations that are present in both tables.
 
 ```{r}
 data <- dplyr::inner_join(x = population_long,
