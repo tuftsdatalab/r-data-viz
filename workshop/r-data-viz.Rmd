@@ -480,3 +480,23 @@ gganimate::anim_save(filename = "animation.gif",
 ```{r}
 knitr::include_graphics("animation.gif")
 ```
+
+```{r, warning=FALSE}
+plotly::plot_ly(data = animation_data,
+                x = ~gdp_per_capita,
+                y = ~life_expectancy,
+                color = ~region_name,
+                text = ~country_name,
+                size = ~population,
+                frame = ~year,
+                type = "scatter",
+                mode = "markers",
+                sizes = c(5, 50),
+                marker = list(symbol = "circle",
+                              sizemode = "diameter")) %>%
+    plotly::layout(xaxis = list(title = "GDP per Capita (USD)",
+                                type = "log"),
+                   yaxis = list(title = "Life Expectancy at Birth")) %>%
+    plotly::animation_opts(frame = 100,
+                           transition = 0)
+```
