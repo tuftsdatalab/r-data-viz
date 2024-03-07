@@ -26,19 +26,15 @@ The `librarian::shelf()` function checks whether all listed packages are install
 -   `ggplot2` is a tidyverse package and arguably the most popular R data visualization package
 -   `plotly` allows for the easy generation of various interactive data visualizations including maps
 -   `gganimate` and `gifski` can be used to generate and export various animated visualizations
--   `stringr` is a tidyverse package allowing for easy manipulation of textual (string) data
--   `lubridate` is a tidyverse package allowing for the easy manipulation of dates and time series
--   `ggmap` can be used to automatically add suitable geospatial base maps to `ggplot2` visualizations
--   `leaflet` allows for the creation and customization of various interactive geospatial maps
 
 ```{r, message=FALSE}
 librarian::shelf(readr, janitor, dplyr, magrittr, tidyr, tidyselect, ggplot2,
-                 plotly, gganimate, gifski, stringr, lubridate, ggmap, leaflet)
+                 plotly, gganimate, gifski)
 ```
 
 # Reading and Cleaning Data
 
-For the first part of this tutorial, we will be using the following data files from the `data` directory to investigate the relationship between health and wealth:
+We will be using the following data files from the `data` directory to investigate the relationship between health and wealth:
 
 -   `gdp.csv` -- World Bank gross domestic product (GDP) estimates (in USD) from 1960 until 2022
 -   `life-expectancy.csv` -- World Bank life expectancy at birth estimates from 1960 until 2021
