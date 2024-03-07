@@ -285,20 +285,35 @@ Note how we can use `dplyr::select()` along with `tidyselect:everything()` to re
 
 # Row Filtering and Static Line Graphs
 
+If we wanted to extract data for a specific country, we could utilize boolean indexing, or we could use the `dplyr::filter()` function, which behaves similarly, but is more intuitive to use and works well within pipelines. For example, to extract all data for the United States, we could combiner `dplyr::filter()` with `country_code == "USA"` to extract all the rows where the `country_code` column is equal to `"USA"`.
+
 ```{r}
 data %>%
     dplyr::filter(country_code == "USA") %>%
     head()
 ```
 
-```{r, warnings=FALSE}
+One can also use more complex logical statements within `dplyr::filter()`. For example, to extract data for all North American countries, we could use `country_code %in% c("USA", "CAN", "MEX")`. To confirm this works, we can select all columns that do not depend on the year from the result and utilize `dplyr::distinct()` to drop all duplicate rows. The result should be one row for each selected country.
+
+```{r}
 data %>%
-    dplyr::filter(country_code == "USA") %>%
-    ggplot2::ggplot(mapping = ggplot2::aes(x = year, y = population)) +
-    ggplot2::geom_line()
+    dplyr::filter(country_code %in% c("USA", "CAN", "MEX")) %>%
+    dplyr::select(country_name, country_code, region_name) %>%
+    dplyr::distinct()
 ```
 
-```{r, warnings=FALSE}
+The `dplyr::filter()` function can be piped together with the `ggplot2::ggplot()` function to easily visualize data for a specific selection. For example, the life expectancy for the United States over time could be displayed as follows. Note that we can specify `na.rm = TRUE` to drop any missing observations before creating the plot. The visualization would still work otherwise, but we would get warnings regarding the missing data.
+
+```{r}
+data %>%
+    dplyr::filter(country_code == "USA") %>%
+    ggplot2::ggplot(mapping = ggplot2::aes(x = year, y = life_expectancy)) +
+    ggplot2::geom_line(na.rm = TRUE)
+```
+
+Following the example above, the GDP per capita growth over time can be compared across all North American countries as follows.
+
+```{r}
 data %>%
     dplyr::filter(country_code %in% c("USA", "CAN", "MEX")) %>%
     ggplot2::ggplot(mapping = ggplot2::aes(x = year,
@@ -307,54 +322,69 @@ data %>%
     ggplot2::geom_line()
 ```
 
+Be careful when using `ggplot2` functions within pipelines as `ggplot2` functions must be combined using the `+` operator instead of the `%>%` pipe operator. This is due to overly complicated technical reasons and just something we have to live with.
+
 # Visualizing Distributions and Correlations
 
+Let us return to our original goal of exploring the relationship between health and wealth. We will use GDP per capita as a proxy for wealth and life expectancy as an indicator of health. We can simplify the analysis by looking only at one point in time and focus our analysis on 2021, which is the latest year we have both GDP per capita and life expectancy data available. We can use `dplyr::filter()` to extract all 2021 data and combine it with `tidyr::drop_na()` to remove any countries that do not have data for 2021.
+
 ```{r}
-data2020 <- data %>%
-    dplyr::filter(year == 2020) %>%
+data2021 <- data %>%
+    dplyr::filter(year == 2021) %>%
     tidyr::drop_na()
 
-head(data2020)
+head(data2021)
 ```
 
+How is wealth distributed among the global population? Let us get a vague idea by visualizing the distribution of GDP per capita among world countries in 2021. We can easily create an histogram using `ggplot2` by defining `data2021` as the data set and specifying that `gdp_per_capita` should be used for the X axis. Then we add a histogram layer to the visualization using `ggplot2::geom_histogram()`. The histogram will have 30 bins by default, which is rarely a good number. Use either `bins` to specify the number of bins or `bindwith` to define the width of each bin.
+
 ```{r}
-ggplot2::ggplot(data = data2020,
+ggplot2::ggplot(data = data2021,
+                mapping = ggplot2::aes(x = gdp_per_capita)) +
+    ggplot2::geom_histogram(binwidth = 10000)
+```
+
+But what about life expectancy? As an alternative to a histogram, we can create a kernel density estimation (KDE) visualization by following the same procedure as before but using `ggplot2::geom_density()` instead of `ggplot2::geom_histogram()`. As KDE is continuous, there is no need to specify the number or width of bins.
+
+```{r}
+ggplot2::ggplot(data = data2021,
                 mapping = ggplot2::aes(x = life_expectancy)) +
-    ggplot2::geom_histogram(binwidth = 1)
+    ggplot2::geom_density()
 ```
 
+A scatter plot is the best way to investigate the relationship between two variables and can be easily generated using `ggplot2::geom_point()`.
+
 ```{r}
-ggplot2::ggplot(data = data2020,
+ggplot2::ggplot(data = data2021,
                 mapping = ggplot2::aes(x = gdp_per_capita,
                                        y = life_expectancy)) +
     ggplot2::geom_point()
 ```
 
-```{r}
-ggplot2::ggplot(data = data2020,
-                mapping = ggplot2::aes(x = gdp_per_capita,
-                                       y = life_expectancy)) +
-    ggplot2::geom_density2d_filled()
-```
+The relationship appears to be logarithmic. This is likely due to the distribution of GDP per capita being heavily skewed. To make better sense of this potentially logarithmic the relationship, we should apply a logarithmic transformation to the axis corresponding to GDP per capita. In our example this is the X axis and we can apply a logarithmic transformation on the X axis by adding `ggplot2::scale_x_log10()` to the plot call.
 
 ```{r}
-ggplot2::ggplot(data = data2020,
+ggplot2::ggplot(data = data2021,
                 mapping = ggplot2::aes(x = gdp_per_capita,
                                        y = life_expectancy)) +
     ggplot2::geom_point() +
     ggplot2::scale_x_log10()
 ```
 
+As a scatter plot alternative, we could also create a two-dimensional kernel density estimate (KDE) surface to get an even better understanding of the data distribution and any potential relationship. This can be done by replacing the `ggplot2::geom_point()` function call with either `ggplot2::geom_density_2d()` for simple contour lines or `ggplot2::geom_density_2d_filled()` for a beautiful color gradient surface.
+
 ```{r}
-ggplot2::ggplot(data = data2020,
+ggplot2::ggplot(data = data2021,
                 mapping = ggplot2::aes(x = gdp_per_capita,
                                        y = life_expectancy)) +
     ggplot2::geom_density2d_filled() +
     ggplot2::scale_x_log10()
 ```
 
+But does the size of a country play a role in this relationship? What about the region? We can investigate this by specifying `color = region_name` and `size = population` in the `ggplot2::aes()` call and creating a colored bubble chart.
+
 ```{r}
-ggplot2::ggplot(data = data2020,
+ggplot2::ggplot(data = data2021,
                 mapping = ggplot2::aes(x = gdp_per_capita,
                                        y = life_expectancy,
                                        color = region_name,
@@ -363,8 +393,10 @@ ggplot2::ggplot(data = data2020,
     ggplot2::scale_x_log10()
 ```
 
+The population of world countries varies vastly. To illustrate this better, we can add `ggplot2::scale_size()` to our visualization and use the `range` argument to specify the smallest and largest possible bubble size.
+
 ```{r}
-ggplot2::ggplot(data = data2020,
+ggplot2::ggplot(data = data2021,
                 mapping = ggplot2::aes(x = gdp_per_capita,
                                        y = life_expectancy,
                                        color = region_name,
@@ -374,8 +406,15 @@ ggplot2::ggplot(data = data2020,
     ggplot2::scale_size(range = c(1,10))
 ```
 
+A smoothed trend line can be added using `ggplot2::geom_smooth()` and specifying`y ~ x` as the `formula`. The `method` argument is used to specify the statistical function to use for the trend line and can be one of the following:
+
+-   `"lm"` for a simple linear model
+-   `"glm"` for a generalized linear model
+-   `"gam"` for a generalized additive model
+-   `"loess"` for locally estimated scatter plot smoothing
+
 ```{r}
-ggplot2::ggplot(data = data2020,
+ggplot2::ggplot(data = data2021,
                 mapping = ggplot2::aes(x = gdp_per_capita,
                                        y = life_expectancy)) +
     ggplot2::geom_point(mapping = ggplot2::aes(color = region_name,
@@ -385,8 +424,10 @@ ggplot2::ggplot(data = data2020,
     ggplot2::geom_smooth(formula = y ~ x, method = "lm")
 ```
 
+Additional arguments can be added to `ggplot2::geom_smooth()` to modify the appearance of the trend line and `ggplot2::labs()` can be used to add a title and label the axes and legend.
+
 ```{r}
-plot <- ggplot2::ggplot(data = data2020,
+plot <- ggplot2::ggplot(data = data2021,
                 mapping = ggplot2::aes(x = gdp_per_capita,
                                        y = life_expectancy)) +
     ggplot2::geom_point(mapping = ggplot2::aes(color = region_name,
@@ -398,7 +439,7 @@ plot <- ggplot2::ggplot(data = data2020,
                          se = FALSE,
                          color = "black",
                          linetype = "dashed") +
-    ggplot2::labs(title = "Health and Wealth by Coutnry in 2020",
+    ggplot2::labs(title = "Health and Wealth by Country in 2021",
                   x = "GDP per Capita (USD)",
                   y = "Life Expectancy at Birth",
                   color = "Region",
@@ -408,8 +449,12 @@ plot
 
 # Creating Interactive Visualizations
 
+While the static scatter plot above is quite pretty to look at, it is not the most informative. We have no idea which points represent which countries and many countries appear clustered together, which makes it harder to tell them apart. An interactive visualization would allow for better exploration and investigation of the data. The easiest way of creating an interactive visualization in R is via the `plotly` package.
+
+Creating an interactive visualization using `plotly` is somewhat reminiscent of using `ggplot2` but with some key differences. The core aspects of the visualization are first defined using the `plotly::plot_ly()` function, the output of which is then piped into `plotly::layout()` to customize the appearance of the visualization by adding axis labels and transformations. Note that column names must be prefixed with a tilde character (`~`) when passing them as arguments in the `plotly::plot_ly()` function call.
+
 ```{r, warning=FALSE}
-plotly::plot_ly(data = data2020,
+plotly::plot_ly(data = data2021,
                 x = ~gdp_per_capita,
                 y = ~life_expectancy,
                 color = ~region_name,
@@ -420,11 +465,13 @@ plotly::plot_ly(data = data2020,
                 sizes = c(5, 50),
                 marker = list(symbol = "circle",
                               sizemode = "diameter")) %>%
-    plotly::layout(title = "Health and Wealth by Coutnry in 2020",
+    plotly::layout(title = "Health and Wealth by Country in 2021",
                    xaxis = list(title = "GDP per Capita (USD)",
                                 type = "log"),
                    yaxis = list(title = "Life Expectancy at Birth"))
 ```
+
+If construction an interactive visualization using the procedure above seems overly complicated, worry not. The `plotly::ggplotly()` function can be used to transform any static `ggplot2` visualization into an interactive `plotly` visualization. For example, we can convert the previous static visualization saved into the `plot` variable into an interactive one as follows.
 
 ```{r}
 plotly::ggplotly(plot)
@@ -432,16 +479,22 @@ plotly::ggplotly(plot)
 
 # Creating Animatied Visualizations
 
+Would it not be nice if we could see how the health and wealth of world countries has changed over time? Luckily R allows us to create animated visualizations! But before we get animating, we must preprocess the data a little. Countries appearing and disappearing throughout the animation would be very distracting, hence it is best to remove countries that do not have data for all the years we are interested in visualizing.
+
+To do this, we first utilize `tidyr::drop_na()` to remove any country-year combinations that have missing data. Then we group the data by country using `dplyr::group_by()` and cleverly utilize `dplyr::filter()` to remove countries that do not have data for all the years. When used with grouped data, `dplyr::n()` gives us the number of observations in each group. In our example, this would be the number of years each country has data for. Using `range(data$year)` we can get the minimum and maximum years in the data and combining that with `diff()` gives us the number of years the data spans. Hence `dplyr::filter(dplyr::n() == diff(range(data$year)))` will extract all countries that have data for every possible year present in the data set.
+
 ```{r}
 animation_data <- data %>%
     tidyr::drop_na() %>%
     dplyr::group_by(country_code) %>%
-    dplyr::filter(n() == diff(range(data$year)))
+    dplyr::filter(dplyr::n() == diff(range(data$year)))
 
 animation_data
 ```
 
-```{r}
+To create an animated visualization, we first use `ggplot2` functions to define the layout for a single animation frame and then we specify the time variable using `gganimate::transition_time()` and the animation type via `gganimate::ease_eas()`. Finally we use `gganimate::animate()` to create the animation and define its characteristics.
+
+```{r, echo=TRUE, results="hide"}
 animated_plot <- ggplot2::ggplot(data = animation_data,
                                  mapping = ggplot2::aes(x = gdp_per_capita,
                                                         y = life_expectancy)) +
@@ -454,7 +507,7 @@ animated_plot <- ggplot2::ggplot(data = animation_data,
                          se = FALSE,
                          color = "black",
                          linetype = "dashed") +
-    ggplot2::labs(title = "Health and Wealth by Coutnry in {frame_time}",
+    ggplot2::labs(title = "Health and Wealth by Country in {frame_time}",
                   x = "GDP per Capita (USD)",
                   y = "Life Expectancy at Birth",
                   color = "Region",
@@ -472,14 +525,20 @@ animation <- gganimate::animate(plot = animated_plot,
                                 res = 72)
 ```
 
+The generated animation can be exported as a GIF file using `gganimate::anim_save()`.
+
 ```{r}
 gganimate::anim_save(filename = "animation.gif",
                      animation = animation)
 ```
 
+We must use `kintr::include_graphics()` to display the animation in the notebook.
+
 ```{r}
 knitr::include_graphics("animation.gif")
 ```
+
+While GIF animations are quite cool, they cannot be easily paused to investigate a single time stamp and as you might have noticed, creating them using R is somewhat convoluted. Luckily we can easily animate an interactive `plotly` visualization by specifying a `frame` argument.
 
 ```{r, warning=FALSE}
 plotly::plot_ly(data = animation_data,
