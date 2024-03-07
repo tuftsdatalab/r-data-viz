@@ -401,8 +401,8 @@ plot <- ggplot2::ggplot(data = data2020,
     ggplot2::labs(title = "Health and Wealth by Coutnry in 2020",
                   x = "GDP per Capita (USD)",
                   y = "Life Expectancy at Birth",
-                 color = "Region",
-                 size = "Population")
+                  color = "Region",
+                  size = "Population")
 plot
 ```
 
@@ -420,7 +420,10 @@ plotly::plot_ly(data = data2020,
                 sizes = c(5, 50),
                 marker = list(symbol = "circle",
                               sizemode = "diameter")) %>%
-    plotly::layout(xaxis = list(type = "log"))
+    plotly::layout(title = "Health and Wealth by Coutnry in 2020",
+                   xaxis = list(title = "GDP per Capita (USD)",
+                                type = "log"),
+                   yaxis = list(title = "Life Expectancy at Birth"))
 ```
 
 ```{r}
@@ -433,7 +436,7 @@ plotly::ggplotly(plot)
 animation_data <- data %>%
     tidyr::drop_na() %>%
     dplyr::group_by(country_code) %>%
-    dplyr::filter(n() == 61)
+    dplyr::filter(n() == diff(range(data$year)))
 
 animation_data
 ```
@@ -460,8 +463,9 @@ animated_plot <- ggplot2::ggplot(data = animation_data,
     gganimate::ease_aes("linear")
 
 animation <- gganimate::animate(plot = animated_plot,
+                                nframes = diff(range(data$year)),
+                                fps = 4,
                                 renderer = gganimate::gifski_renderer(),
-                                duration = 15,
                                 width = 5,
                                 height = 5,
                                 units = "in",
