@@ -1,7 +1,7 @@
 ---
 title: "R for Data Manipulation and Visualization"
 author: "Uku-Kaspar Uustalu"
-date: "November 30, 2023"
+date: "March 6, 2024"
 output:
   html_notebook:
     toc: yes
@@ -12,7 +12,7 @@ output:
 We will be using `librarian` for package management as it greatly simplifies the process of installing and attaching packages. It needs to be installed using `install.packages()` unless already installed.
 
 ```{r, eval=FALSE, message=FALSE}
-install.packages('librarian')
+install.packages("librarian")
 ```
 
 The `librarian::shelf()` function checks whether all listed packages are installed and installs them if needed. Then it loads all listed packages into the environment. You can think of it as a combination of `install.packages()` and `library()` except it will not re-install a package if it is already installed. Here are the packages we will be using:
@@ -28,7 +28,7 @@ The `librarian::shelf()` function checks whether all listed packages are install
 -   `gganimate` and `gifski` can be used to generate and export various animated visualizations
 
 ```{r, message=FALSE}
-librarian::shelf(readr, janitor, dplyr, magrittr, tidyr, tidyselect, ggplot2, 
+librarian::shelf(readr, janitor, dplyr, magrittr, tidyr, tidyselect, ggplot2,
                  plotly, gganimate, gifski)
 ```
 
@@ -36,22 +36,22 @@ librarian::shelf(readr, janitor, dplyr, magrittr, tidyr, tidyselect, ggplot2,
 
 We will be using the following data files from the `data` directory to investigate the relationship between health and wealth:
 
--   `gdp.csv` -- World Bank gross domestic product (GDP) estimates (in USD) from 1960 until 2021
--   `life-expectancy.csv` -- World Bank life expectancy at birth estimates from 1960 until 2020
+-   `gdp.csv` -- World Bank gross domestic product (GDP) estimates (in USD) from 1960 until 2022
+-   `life-expectancy.csv` -- World Bank life expectancy at birth estimates from 1960 until 2021
 -   `m49.csv` -- United Nations [M49](https://en.wikipedia.org/wiki/UN_M49) Standard Country or Area Codes for Statistical Use
--   `population.csv` -- World Bank country and region population estimates from 1960 until 2021
+-   `population.csv` -- World Bank country and region population estimates from 1960 until 2022
 
 All the data are in [IEFT RFC 4180 CSV](https://www.rfc-editor.org/info/rfc4180) (comma-separated values) format and the first four rows of the World Bank data files contain metadata with the actual data table starting on row five.
 
 Let us start with the population data. CSV data files can be easily read in using the `readr::read_csv()` function. The function reads the contents of the file into a `tibble` object (which is basically an advanced data frame) and supports various additional arguments. For example, we can utilize the `skip` argument to skip the first four rows of the CSV file as the data table does not start until row five.
 
 ```{r}
-population <- readr::read_csv(file = 'data/population.csv',
+population <- readr::read_csv(file = "data/population.csv",
                               skip = 4,
                               show_col_types = FALSE)
 ```
 
-Upon file read, the function outputs a summary outlining the column names and types of the data by default. This can be silenced by specifying the `show_col_types=FALSE` when calling the function.
+Upon file read, the function outputs a summary outlining the column names and types of the data by default. This can be silenced by specifying `show_col_types=FALSE` when calling the function.
 
 Now the World Bank population data is stored in a `tibble` named `population`. Calling the name of the variable will display the data in a neat interactive table viewer.
 
@@ -65,9 +65,9 @@ We see that the `tibble` appears to have the following columns:
 -   `Country Code` -- [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) country code
 -   `Indicator Name` -- name of the indicator represented by the data
 -   `Indicator Code` -- World Bank code for the indicator
--   `1960` ... `2021` -- population estimates by year
+-   `1960` ... `2022` -- population estimates by year
 
-We also see that the table has 266 rows and 66 columns. The number of rows and columns of a `tibble` or other data-frame-like object can also be programmatically extracted by calling the `dim()` function.
+We also see that the table has 266 rows and 67 columns. The number of rows and columns of a `tibble` or other data-frame-like object can also be programmatically extracted by calling the `dim()` function.
 
 ```{r}
 dim(population)
@@ -105,8 +105,8 @@ head(population)
 Knowing that the World Bank GDP data follows the exact same format as the World Bank population data , we can read the CSV file, clean the column names, and drop the unneeded columns all in one go by combining the `readr::read_csv()`, `janitor::clean_names()`, and `dplyr::select()` functions using the forward pipe operator `%>%` from the `magrittr` package. The `%>%` operator takes either a variable or the output of a function and feeds it into the following function as its first argument.
 
 ```{r}
-gdp <- readr::read_csv(file = 'data/gdp.csv',
-                       skip = 4, 
+gdp <- readr::read_csv(file = "data/gdp.csv",
+                       skip = 4,
                        show_col_types = FALSE) %>%
     janitor::clean_names() %>%
     dplyr::select(-indicator_name, -indicator_code)
@@ -136,14 +136,14 @@ We can use the `tidyr::pivot_longer()` function to covert wide format tables int
 -   `names_prefix` -- the prefix to remove from the specified wide table column names (if any)
 -   `values_to` -- name of the column in the long table that sores the data values from the wide table
 
-The columns we would like to convert to long format are the year columns. These are all prefixed with an `x` character. We can use the `tidyselect::start_with()` function to select all the columns beginning with an `x` character and pass those as the `cols` argument. The column names should be stripped of the preceding `x` character, so we pass that as the `names_prefix` argument. The stripped column names represent years and the cell values represent population represent population estimates, so finally we specify `names_to = "year"` and `values_to = "population"` as the final arguments.
+The columns we would like to convert to long format are the year columns. These are all prefixed with an `x` character. We can use the `tidyselect::starts_with()` function to select all the columns beginning with an `x` character and pass those as the `cols` argument. The column names should be stripped of the preceding `x` character, so we pass that as the `names_prefix` argument. The stripped column names represent years and the cell values represent population represent population estimates, so finally we specify `names_to = "year"` and `values_to = "population"` as the final arguments.
 
 ```{r}
 population_long <- tidyr::pivot_longer(data = population,
-                                       cols = tidyselect::starts_with('x'),
-                                       names_to = 'year',
-                                       names_prefix = 'x',
-                                       values_to = 'population')
+                                       cols = tidyselect::starts_with("x"),
+                                       names_to = "year",
+                                       names_prefix = "x",
+                                       values_to = "population")
 population_long
 ```
 
@@ -169,10 +169,10 @@ Now let us convert the GDP table into long format as well. As with the populatio
 
 ```{r}
 gdp_long <- gdp %>%
-    tidyr::pivot_longer(cols = tidyselect::starts_with('x'),
-                        names_to = 'year',
-                        names_prefix = 'x',
-                        values_to = 'gdp') %>%
+    tidyr::pivot_longer(cols = tidyselect::starts_with("x"),
+                        names_to = "year",
+                        names_prefix = "x",
+                        values_to = "gdp") %>%
     dplyr::mutate(year = as.integer(year))
 
 gdp_long
@@ -193,12 +193,12 @@ All the aforementioned functions require at least three arguments:
 -   `y` -- the right table
 -   `by` -- the column(s) to join on
 
-We would like to join on each unique country and year combination. As spellings of country names might differ between tables, it is good practice to always use the [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) country code or some other analogous unique identifier to distinguish between countries. The country code for each country is determined by an international standard and should not differ between tables, allowing us to reliably join the data. Hence we will specify `by = c("country_code", "year")` to perform the join on unique country-year combinations use the `dplyr::inner_join()` function to only keep year-country combinations that are present in both tables.
+We would like to join on each unique country and year combination. As spellings of country names might differ between tables, it is good practice to always use the [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) country code or some other analogous unique identifier to distinguish between countries. The country code for each country is determined by an international standard and should not differ between tables, allowing us to reliably join the data. Hence we will specify `by = c("country_code", "year")` to perform the join on unique country-year combinations using the `dplyr::inner_join()` function to only keep country-year combinations that are present in both tables.
 
 ```{r}
 data <- dplyr::inner_join(x = population_long,
                           y = gdp_long,
-                          by = c('country_code', 'year'))
+                          by = c("country_code", "year"))
 head(data)
 ```
 
@@ -225,9 +225,9 @@ read_world_bank_data <- function(file_path, variable_name) {
         janitor::clean_names() %>%
         dplyr::select(-indicator_name,
                       -indicator_code) %>%
-        tidyr::pivot_longer(cols = starts_with('x'),
-                            names_to = 'year',
-                            names_prefix = 'x',
+        tidyr::pivot_longer(cols = starts_with("x"),
+                            names_to = "year",
+                            names_prefix = "x",
                             values_to = variable_name) %>%
         dplyr::mutate(year = as.integer(year)) %>%
         return()
@@ -235,8 +235,8 @@ read_world_bank_data <- function(file_path, variable_name) {
 ```
 
 ```{r}
-life_expectancy <- read_world_bank_data('data/life-expectancy.csv',
-                                        'life_expectancy')
+life_expectancy <- read_world_bank_data("data/life-expectancy.csv",
+                                        "life_expectancy")
 head(life_expectancy)
 ```
 
@@ -245,16 +245,16 @@ Now we can use a pipeline to drop the redundant `country_name` column and then j
 ```{r}
 data <- life_expectancy %>%
     dplyr::select(-country_name) %>%
-    dplyr::inner_join(x = data, 
+    dplyr::inner_join(x = data,
                       y = .,
-                      by = c('country_code', 'year'))
+                      by = c("country_code", "year"))
 data
 ```
 
 Finally we would also like to know which [United Nations regional geoscheme](https://en.wikipedia.org/wiki/United_Nations_geoscheme) the country belongs to. Information on this is available in the United Nations [M49](https://en.wikipedia.org/wiki/UN_M49) table. We can utilize a pipeline to read in and clean the table all in one go. Note that as this is a standard CSV table, there is no need to skip any rows.
 
 ```{r}
-m49 <- readr::read_csv(file = 'data/m49.csv',
+m49 <- readr::read_csv(file = "data/m49.csv",
                        show_col_types = FALSE) %>%
     janitor::clean_names()
 
@@ -268,7 +268,7 @@ data <- m49 %>%
     dplyr::select(region_name,
                   country_code = iso_alpha3_code) %>%
     dplyr::inner_join(data,
-                      by = 'country_code') %>%
+                      by = "country_code") %>%
     dplyr::select(country_name,
                   country_code,
                   region_name,
@@ -281,76 +281,106 @@ Note how we can use `dplyr::select()` along with `tidyselect:everything()` to re
 
 # Row Filtering and Static Line Graphs
 
+If we wanted to extract data for a specific country, we could utilize boolean indexing, or we could use the `dplyr::filter()` function, which behaves similarly, but is more intuitive to use and works well within pipelines. For example, to extract all data for the United States, we could combiner `dplyr::filter()` with `country_code == "USA"` to extract all the rows where the `country_code` column is equal to `"USA"`.
+
 ```{r}
 data %>%
-    dplyr::filter(country_code == 'USA') %>%
+    dplyr::filter(country_code == "USA") %>%
     head()
 ```
 
-```{r, warnings=FALSE}
+One can also use more complex logical statements within `dplyr::filter()`. For example, to extract data for all North American countries, we could use `country_code %in% c("USA", "CAN", "MEX")`. To confirm this works, we can select all columns that do not depend on the year from the result and utilize `dplyr::distinct()` to drop all duplicate rows. The result should be one row for each selected country.
+
+```{r}
 data %>%
-    dplyr::filter(country_code == 'USA') %>%
-    ggplot2::ggplot(mapping = ggplot2::aes(x = year, y = population)) +
-    ggplot2::geom_line()
+    dplyr::filter(country_code %in% c("USA", "CAN", "MEX")) %>%
+    dplyr::select(country_name, country_code, region_name) %>%
+    dplyr::distinct()
 ```
 
-```{r, warnings=FALSE}
+The `dplyr::filter()` function can be piped together with the `ggplot2::ggplot()` function to easily visualize data for a specific selection. For example, the life expectancy for the United States over time could be displayed as follows. Note that we can specify `na.rm = TRUE` to drop any missing observations before creating the plot. The visualization would still work otherwise, but we would get warnings regarding the missing data.
+
+```{r}
 data %>%
-    dplyr::filter(country_code %in% c('USA', 'CAN', 'MEX')) %>%
+    dplyr::filter(country_code == "USA") %>%
+    ggplot2::ggplot(mapping = ggplot2::aes(x = year, y = life_expectancy)) +
+    ggplot2::geom_line(na.rm = TRUE)
+```
+
+Following the example above, the GDP per capita growth over time can be compared across all North American countries as follows.
+
+```{r}
+data %>%
+    dplyr::filter(country_code %in% c("USA", "CAN", "MEX")) %>%
     ggplot2::ggplot(mapping = ggplot2::aes(x = year,
                                            y = gdp_per_capita,
                                            color = country_name)) +
     ggplot2::geom_line()
 ```
 
+Be careful when using `ggplot2` functions within pipelines as `ggplot2` functions must be combined using the `+` operator instead of the `%>%` pipe operator. This is due to overly complicated technical reasons and just something we have to live with.
+
 # Visualizing Distributions and Correlations
 
+Let us return to our original goal of exploring the relationship between health and wealth. We will use GDP per capita as a proxy for wealth and life expectancy as an indicator of health. We can simplify the analysis by looking only at one point in time and focus our analysis on 2021, which is the latest year we have both GDP per capita and life expectancy data available. We can use `dplyr::filter()` to extract all 2021 data and combine it with `tidyr::drop_na()` to remove any countries that do not have data for 2021.
+
 ```{r}
-data2020 <- data %>%
-    dplyr::filter(year == 2020) %>%
+data2021 <- data %>%
+    dplyr::filter(year == 2021) %>%
     tidyr::drop_na()
 
-head(data2020)
+head(data2021)
 ```
 
+How is wealth distributed among the global population? Let us get a vague idea by visualizing the distribution of GDP per capita among world countries in 2021. We can easily create an histogram using `ggplot2` by defining `data2021` as the data set and specifying that `gdp_per_capita` should be used for the X axis. Then we add a histogram layer to the visualization using `ggplot2::geom_histogram()`. The histogram will have 30 bins by default, which is rarely a good number. Use either `bins` to specify the number of bins or `bindwith` to define the width of each bin.
+
 ```{r}
-ggplot2::ggplot(data = data2020,
+ggplot2::ggplot(data = data2021,
+                mapping = ggplot2::aes(x = gdp_per_capita)) +
+    ggplot2::geom_histogram(binwidth = 10000)
+```
+
+But what about life expectancy? As an alternative to a histogram, we can create a kernel density estimation (KDE) visualization by following the same procedure as before but using `ggplot2::geom_density()` instead of `ggplot2::geom_histogram()`. As KDE is continuous, there is no need to specify the number or width of bins.
+
+```{r}
+ggplot2::ggplot(data = data2021,
                 mapping = ggplot2::aes(x = life_expectancy)) +
-    ggplot2::geom_histogram(binwidth = 1)
+    ggplot2::geom_density()
 ```
 
+A scatter plot is the best way to investigate the relationship between two variables and can be easily generated using `ggplot2::geom_point()`.
+
 ```{r}
-ggplot2::ggplot(data = data2020, 
+ggplot2::ggplot(data = data2021,
                 mapping = ggplot2::aes(x = gdp_per_capita,
                                        y = life_expectancy)) +
     ggplot2::geom_point()
 ```
 
-```{r}
-ggplot2::ggplot(data = data2020, 
-                mapping = ggplot2::aes(x = gdp_per_capita,
-                                       y = life_expectancy)) +
-    ggplot2::geom_density2d_filled()
-```
+The relationship appears to be logarithmic. This is likely due to the distribution of GDP per capita being heavily skewed. To make better sense of this potentially logarithmic the relationship, we should apply a logarithmic transformation to the axis corresponding to GDP per capita. In our example this is the X axis and we can apply a logarithmic transformation on the X axis by adding `ggplot2::scale_x_log10()` to the plot call.
 
 ```{r}
-ggplot2::ggplot(data = data2020, 
+ggplot2::ggplot(data = data2021,
                 mapping = ggplot2::aes(x = gdp_per_capita,
                                        y = life_expectancy)) +
     ggplot2::geom_point() +
     ggplot2::scale_x_log10()
 ```
 
+As a scatter plot alternative, we could also create a two-dimensional kernel density estimate (KDE) surface to get an even better understanding of the data distribution and any potential relationship. This can be done by replacing the `ggplot2::geom_point()` function call with either `ggplot2::geom_density_2d()` for simple contour lines or `ggplot2::geom_density_2d_filled()` for a beautiful color gradient surface.
+
 ```{r}
-ggplot2::ggplot(data = data2020, 
+ggplot2::ggplot(data = data2021,
                 mapping = ggplot2::aes(x = gdp_per_capita,
                                        y = life_expectancy)) +
     ggplot2::geom_density2d_filled() +
     ggplot2::scale_x_log10()
 ```
 
+But does the size of a country play a role in this relationship? What about the region? We can investigate this by specifying `color = region_name` and `size = population` in the `ggplot2::aes()` call and creating a colored bubble chart.
+
 ```{r}
-ggplot2::ggplot(data = data2020, 
+ggplot2::ggplot(data = data2021,
                 mapping = ggplot2::aes(x = gdp_per_capita,
                                        y = life_expectancy,
                                        color = region_name,
@@ -359,8 +389,10 @@ ggplot2::ggplot(data = data2020,
     ggplot2::scale_x_log10()
 ```
 
+The population of world countries varies vastly. To illustrate this better, we can add `ggplot2::scale_size()` to our visualization and use the `range` argument to specify the smallest and largest possible bubble size.
+
 ```{r}
-ggplot2::ggplot(data = data2020, 
+ggplot2::ggplot(data = data2021,
                 mapping = ggplot2::aes(x = gdp_per_capita,
                                        y = life_expectancy,
                                        color = region_name,
@@ -370,19 +402,28 @@ ggplot2::ggplot(data = data2020,
     ggplot2::scale_size(range = c(1,10))
 ```
 
+A smoothed trend line can be added using `ggplot2::geom_smooth()` and specifying`y ~ x` as the `formula`. The `method` argument is used to specify the statistical function to use for the trend line and can be one of the following:
+
+-   `"lm"` for a simple linear model
+-   `"glm"` for a generalized linear model
+-   `"gam"` for a generalized additive model
+-   `"loess"` for locally estimated scatter plot smoothing
+
 ```{r}
-ggplot2::ggplot(data = data2020, 
+ggplot2::ggplot(data = data2021,
                 mapping = ggplot2::aes(x = gdp_per_capita,
                                        y = life_expectancy)) +
     ggplot2::geom_point(mapping = ggplot2::aes(color = region_name,
                                                size = population)) +
     ggplot2::scale_x_log10() +
     ggplot2::scale_size(range = c(1,10)) +
-    ggplot2::geom_smooth(formula = y ~ x, method = 'lm')
+    ggplot2::geom_smooth(formula = y ~ x, method = "lm")
 ```
 
+Additional arguments can be added to `ggplot2::geom_smooth()` to modify the appearance of the trend line and `ggplot2::labs()` can be used to add a title and label the axes and legend.
+
 ```{r}
-plot <- ggplot2::ggplot(data = data2020, 
+plot <- ggplot2::ggplot(data = data2021,
                 mapping = ggplot2::aes(x = gdp_per_capita,
                                        y = life_expectancy)) +
     ggplot2::geom_point(mapping = ggplot2::aes(color = region_name,
@@ -390,34 +431,43 @@ plot <- ggplot2::ggplot(data = data2020,
     ggplot2::scale_x_log10() +
     ggplot2::scale_size(range = c(1,10)) +
     ggplot2::geom_smooth(formula = y ~ x,
-                         method = 'lm',
+                         method = "lm",
                          se = FALSE,
-                         color = 'black',
-                         linetype = 'dashed') +
-    ggplot2::labs(title = 'Health and Wealth by Coutnry in 2020',
-                  x = 'GDP per Capita (USD)',
-                  y = 'Life Expectancy at Birth',
-                 color = 'Region',
-                 size = 'Population')
+                         color = "black",
+                         linetype = "dashed") +
+    ggplot2::labs(title = "Health and Wealth by Country in 2021",
+                  x = "GDP per Capita (USD)",
+                  y = "Life Expectancy at Birth",
+                  color = "Region",
+                  size = "Population")
 plot
 ```
 
 # Creating Interactive Visualizations
 
+While the static scatter plot above is quite pretty to look at, it is not the most informative. We have no idea which points represent which countries and many countries appear clustered together, which makes it harder to tell them apart. An interactive visualization would allow for better exploration and investigation of the data. The easiest way of creating an interactive visualization in R is via the `plotly` package.
+
+Creating an interactive visualization using `plotly` is somewhat reminiscent of using `ggplot2` but with some key differences. The core aspects of the visualization are first defined using the `plotly::plot_ly()` function, the output of which is then piped into `plotly::layout()` to customize the appearance of the visualization by adding axis labels and transformations. Note that column names must be prefixed with a tilde character (`~`) when passing them as arguments in the `plotly::plot_ly()` function call.
+
 ```{r, warning=FALSE}
-plotly::plot_ly(data = data2020,
+plotly::plot_ly(data = data2021,
                 x = ~gdp_per_capita,
                 y = ~life_expectancy,
                 color = ~region_name,
                 text = ~country_name,
                 size = ~population,
-                type = 'scatter',
-                mode = 'markers',
+                type = "scatter",
+                mode = "markers",
                 sizes = c(5, 50),
-                marker = list(symbol = 'circle',
-                              sizemode = 'diameter')) %>%
-    plotly::layout(xaxis = list(type = 'log'))
+                marker = list(symbol = "circle",
+                              sizemode = "diameter")) %>%
+    plotly::layout(title = "Health and Wealth by Country in 2021",
+                   xaxis = list(title = "GDP per Capita (USD)",
+                                type = "log"),
+                   yaxis = list(title = "Life Expectancy at Birth"))
 ```
+
+If construction an interactive visualization using the procedure above seems overly complicated, worry not. The `plotly::ggplotly()` function can be used to transform any static `ggplot2` visualization into an interactive `plotly` visualization. For example, we can convert the previous static visualization saved into the `plot` variable into an interactive one as follows.
 
 ```{r}
 plotly::ggplotly(plot)
@@ -425,16 +475,22 @@ plotly::ggplotly(plot)
 
 # Creating Animatied Visualizations
 
+Would it not be nice if we could see how the health and wealth of world countries has changed over time? Luckily R allows us to create animated visualizations! But before we get animating, we must preprocess the data a little. Countries appearing and disappearing throughout the animation would be very distracting, hence it is best to remove countries that do not have data for all the years we are interested in visualizing.
+
+To do this, we first utilize `tidyr::drop_na()` to remove any country-year combinations that have missing data. Then we group the data by country using `dplyr::group_by()` and cleverly utilize `dplyr::filter()` to remove countries that do not have data for all the years. When used with grouped data, `dplyr::n()` gives us the number of observations in each group. In our example, this would be the number of years each country has data for. Using `range(data$year)` we can get the minimum and maximum years in the data and combining that with `diff()` gives us the number of years the data spans. Hence `dplyr::filter(dplyr::n() == diff(range(data$year)))` will extract all countries that have data for every possible year present in the data set.
+
 ```{r}
 animation_data <- data %>%
     tidyr::drop_na() %>%
     dplyr::group_by(country_code) %>%
-    dplyr::filter(n() == 61)
+    dplyr::filter(dplyr::n() == diff(range(data$year)))
 
 animation_data
 ```
 
-```{r}
+To create an animated visualization, we first use `ggplot2` functions to define the layout for a single animation frame and then we specify the time variable using `gganimate::transition_time()` and the animation type via `gganimate::ease_eas()`. Finally we use `gganimate::animate()` to create the animation and define its characteristics.
+
+```{r, echo=TRUE, results="hide"}
 animated_plot <- ggplot2::ggplot(data = animation_data,
                                  mapping = ggplot2::aes(x = gdp_per_capita,
                                                         y = life_expectancy)) +
@@ -443,32 +499,59 @@ animated_plot <- ggplot2::ggplot(data = animation_data,
     ggplot2::scale_x_log10() +
     ggplot2::scale_size(range = c(1,10)) +
     ggplot2::geom_smooth(formula = y ~ x,
-                         method = 'lm',
+                         method = "lm",
                          se = FALSE,
-                         color = 'black',
-                         linetype = 'dashed') +
-    ggplot2::labs(title = 'Health and Wealth by Coutnry in {frame_time}',
-                  x = 'GDP per Capita (USD)',
-                  y = 'Life Expectancy at Birth',
-                  color = 'Region',
-                  size = 'Population') +
+                         color = "black",
+                         linetype = "dashed") +
+    ggplot2::labs(title = "Health and Wealth by Country in {frame_time}",
+                  x = "GDP per Capita (USD)",
+                  y = "Life Expectancy at Birth",
+                  color = "Region",
+                  size = "Population") +
     gganimate::transition_time(year) +
-    gganimate::ease_aes('linear')
+    gganimate::ease_aes("linear")
 
 animation <- gganimate::animate(plot = animated_plot,
+                                nframes = diff(range(data$year)),
+                                fps = 4,
                                 renderer = gganimate::gifski_renderer(),
-                                duration = 15,
-                                width = 5, 
+                                width = 5,
                                 height = 5,
-                                units = 'in',
+                                units = "in",
                                 res = 72)
 ```
 
+The generated animation can be exported as a GIF file using `gganimate::anim_save()`.
+
 ```{r}
-gganimate::anim_save(filename = 'animation.gif',
+gganimate::anim_save(filename = "animation.gif",
                      animation = animation)
 ```
 
+We must use `kintr::include_graphics()` to display the animation in the notebook.
+
 ```{r}
-knitr::include_graphics('animation.gif')
+knitr::include_graphics("animation.gif")
+```
+
+While GIF animations are quite cool, they cannot be easily paused to investigate a single time stamp and as you might have noticed, creating them using R is somewhat convoluted. Luckily we can easily animate an interactive `plotly` visualization by specifying a `frame` argument.
+
+```{r, warning=FALSE}
+plotly::plot_ly(data = animation_data,
+                x = ~gdp_per_capita,
+                y = ~life_expectancy,
+                color = ~region_name,
+                text = ~country_name,
+                size = ~population,
+                frame = ~year,
+                type = "scatter",
+                mode = "markers",
+                sizes = c(5, 50),
+                marker = list(symbol = "circle",
+                              sizemode = "diameter")) %>%
+    plotly::layout(xaxis = list(title = "GDP per Capita (USD)",
+                                type = "log"),
+                   yaxis = list(title = "Life Expectancy at Birth")) %>%
+    plotly::animation_opts(frame = 100,
+                           transition = 0)
 ```
